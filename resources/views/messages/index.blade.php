@@ -145,7 +145,7 @@
                                                 </div>
                                                 <div class="pt-1">
                                                     <a href="{{ route('loans.index') }}" class="text-blue-600 hover:text-blue-800 font-bold hover:underline flex items-center gap-1">
-                                                        <span>Buka Riwayat Tiket Ini</span>
+                                                        <span>Buka Riwayat Peminjaman Ini</span>
                                                         &rarr;
                                                     </a>
                                                 </div>
