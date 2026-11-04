@@ -236,6 +236,7 @@ class DatabaseSeeder extends Seeder
                 'fine_per_day' => 2000,
                 'max_days' => 1,
                 'image_gradient' => 'from-rose-500 to-red-700',
+                'image' => 'images/unit/unit_basket_m.jpg',
             ],
             [
                 'category_id' => $catOlahraga->id,
@@ -297,7 +298,7 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $catLab->id,
                 'loan_id' => $loan1->id,
                 'type' => 'approval',
-                'message' => 'Permohonan peminjaman Oscilloscope (No. Tiket ' . $loan1->ticket_number . ') telah disetujui. Unit fisik: LAB-OSC-02-U01. Silakan ambil di Lab RPL & Elektronika Lt. 2 pada jam layanan peminjaman alat.',
+                'message' => 'Permohonan peminjaman Oscilloscope (No. Tiket '.$loan1->ticket_number.') telah disetujui. Unit fisik: LAB-OSC-02-U01. Silakan ambil di Lab RPL & Elektronika Lt. 2 pada jam layanan peminjaman alat.',
                 'is_read' => false,
                 'created_at' => Carbon::now()->subHours(3),
             ]);
@@ -308,7 +309,7 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $catLab->id,
                 'loan_id' => $loan1->id,
                 'type' => 'reminder',
-                'message' => 'Pengingat: Batas pengembalian alat adalah tanggal ' . $loan1->end_date->format('d/m/Y') . ' pukul 15.30 WIB. Pastikan kabel probe dan adaptor tersimpan rapi di tas box.',
+                'message' => 'Pengingat: Batas pengembalian alat adalah tanggal '.$loan1->end_date->format('d/m/Y').' pukul 15.30 WIB. Pastikan kabel probe dan adaptor tersimpan rapi di tas box.',
                 'is_read' => false,
                 'created_at' => Carbon::now()->subHours(1),
             ]);
@@ -335,7 +336,7 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $catBengkel->id,
                 'loan_id' => $loan2->id,
                 'type' => 'info',
-                'message' => 'Pengajuan No. Tiket ' . $loan2->ticket_number . ' telah diterima. Sedang dilakukan pengecekan ketersediaan elektroda dan topeng las di ruang toolroom bengkel.',
+                'message' => 'Pengajuan No. Tiket '.$loan2->ticket_number.' telah diterima. Sedang dilakukan pengecekan ketersediaan elektroda dan topeng las di ruang toolroom bengkel.',
                 'is_read' => false,
                 'created_at' => Carbon::now()->subMinutes(45),
             ]);
@@ -368,7 +369,7 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $catMultimedia->id,
                 'loan_id' => $loan3->id,
                 'type' => 'info',
-                'message' => 'Terima kasih, Pak Danang. Alat Sony Alpha A6400 (Tiket ' . $loan3->ticket_number . ') telah diverifikasi kembali dalam kondisi BAIK.',
+                'message' => 'Terima kasih, Pak Danang. Alat Sony Alpha A6400 (Tiket '.$loan3->ticket_number.') telah diverifikasi kembali dalam kondisi BAIK.',
                 'is_read' => true,
                 'created_at' => Carbon::now()->subDays(2),
             ]);

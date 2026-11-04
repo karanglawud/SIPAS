@@ -20,6 +20,7 @@ class Tool extends Model
         'fine_per_day',
         'max_days',
         'image_gradient',
+        'image',
     ];
 
     public function category()

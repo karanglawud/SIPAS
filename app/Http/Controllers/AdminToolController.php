@@ -8,6 +8,7 @@ use App\Models\ToolUnit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AdminToolController extends Controller
@@ -107,27 +108,37 @@ class AdminToolController extends Controller
             'total_stock' => 'required|integer|min:1|max:100',
             'fine_per_day' => 'required|integer|min:0',
             'max_days' => 'required|integer|min:1|max:30',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'image_gradient' => 'nullable|string|max:100',
         ], [
             'category_id.required' => 'Pilih kategori alat yang sesuai dengan wewenang Anda.',
             'code.unique' => 'Kode alat ini sudah digunakan oleh alat lain.',
             'name.required' => 'Nama alat praktik wajib diisi.',
             'location.required' => 'Lokasi ruang penyimpanan wajib diisi.',
+            'image.image' => 'Berkas harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus berupa JPG, PNG, atau WebP.',
+            'image.max' => 'Ukuran gambar maksimal 5 MB.',
         ]);
 
-        $gradient = $validated['image_gradient'] ?: 'from-blue-600 to-indigo-700';
+        $gradient = $validated['image_gradient'] ?? 'from-slate-800 to-slate-950';
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('images/unit', 'public');
+        }
 
         $tool = Tool::create([
             'category_id' => $validated['category_id'],
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
-            'spec' => $validated['spec'],
+            'spec' => $validated['spec'] ?? null,
             'location' => $validated['location'],
             'total_stock' => $validated['total_stock'],
             'available_stock' => $validated['total_stock'],
             'fine_per_day' => $validated['fine_per_day'],
             'max_days' => $validated['max_days'],
             'image_gradient' => $gradient,
+            'image' => $imagePath,
         ]);
 
         // Generate initial physical units automatically
@@ -179,17 +190,42 @@ class AdminToolController extends Controller
             'location' => 'required|string|max:255',
             'fine_per_day' => 'required|integer|min:0',
             'max_days' => 'required|integer|min:1|max:30',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
             'image_gradient' => 'nullable|string|max:100',
+        ], [
+            'name.required' => 'Nama alat praktik wajib diisi.',
+            'code.unique' => 'Kode alat ini sudah digunakan oleh alat lain.',
+            'location.required' => 'Lokasi ruang penyimpanan wajib diisi.',
+            'image.image' => 'Berkas harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus berupa JPG, PNG, atau WebP.',
+            'image.max' => 'Ukuran gambar maksimal 5 MB.',
         ]);
+
+        $imagePath = $tool->image;
+        if ($request->boolean('remove_image')) {
+            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+            $imagePath = null;
+        }
+
+        if ($request->hasFile('image')) {
+            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+            $imagePath = $request->file('image')->store('images/unit', 'public');
+        }
 
         $tool->update([
             'name' => $validated['name'],
             'code' => strtoupper($validated['code']),
-            'spec' => $validated['spec'],
+            'spec' => array_key_exists('spec', $validated) ? $validated['spec'] : $tool->spec,
             'location' => $validated['location'],
             'fine_per_day' => $validated['fine_per_day'],
             'max_days' => $validated['max_days'],
-            'image_gradient' => $validated['image_gradient'] ?: $tool->image_gradient,
+            'image_gradient' => $validated['image_gradient'] ?? $tool->image_gradient,
+            'image' => $imagePath,
         ]);
 
         return redirect()->route('admin.tools.index')->with('success', 'Rincian alat praktik "'.$tool->name.'" berhasil diperbarui.');
@@ -224,7 +260,7 @@ class AdminToolController extends Controller
             'notes' => 'nullable|string|max:255',
         ]);
 
-        $unitCode = $validated['unit_code']
+        $unitCode = ! empty($validated['unit_code'])
             ? strtoupper($validated['unit_code'])
             : strtoupper($tool->code).'-U'.str_pad((string) ($tool->units()->count() + 1), 2, '0', STR_PAD_LEFT);
 
@@ -233,7 +269,7 @@ class AdminToolController extends Controller
             'unit_code' => $unitCode,
             'status' => 'tersedia',
             'condition' => $validated['condition'],
-            'notes' => $validated['notes'],
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         $tool->increment('total_stock');
@@ -258,7 +294,7 @@ class AdminToolController extends Controller
         $unit->update([
             'status' => $validated['status'],
             'condition' => $validated['condition'],
-            'notes' => $validated['notes'],
+            'notes' => array_key_exists('notes', $validated) ? $validated['notes'] : $unit->notes,
         ]);
 
         // Recalculate available_stock for the tool

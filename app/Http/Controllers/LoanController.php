@@ -122,9 +122,48 @@ class LoanController extends Controller
 
     public function printTicket(Loan $loan)
     {
+        if (! Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ($loan->user_id !== Auth::id() && ! Auth::user()->isAdmin()) {
+            abort(403, 'Anda tidak memiliki hak untuk mencetak tiket peminjaman ini.');
+        }
+
         $loan->load(['user', 'tool.category', 'approver']);
 
-        return view('loans.print', compact('loan'));
+        $backRoute = route('loans.index');
+        $backLabel = 'Kembali ke Riwayat';
+
+        return view('loans.print', compact('loan', 'backRoute', 'backLabel'));
+    }
+
+    public function printHistory(Request $request)
+    {
+        if (! Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $user = Auth::user();
+        $query = Loan::with(['tool.category', 'approver'])
+            ->where('user_id', $user->id)
+            ->latest();
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        $loans = $query->get();
+
+        $stats = [
+            'total' => $loans->count(),
+            'selesai' => $loans->where('status', 'selesai')->count(),
+            'berjalan' => $loans->whereIn('status', ['disetujui', 'dipinjam'])->count(),
+            'menunggu' => $loans->where('status', 'menunggu')->count(),
+            'total_denda' => (int) $loans->sum('fine_amount'),
+        ];
+
+        return view('loans.print-history', compact('loans', 'user', 'stats'));
     }
 
     public function cancel(Request $request, Loan $loan)

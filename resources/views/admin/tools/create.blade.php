@@ -21,7 +21,7 @@
         </div>
 
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-            <form action="{{ route('admin.tools.store') }}" method="POST" class="space-y-5 text-xs">
+            <form action="{{ route('admin.tools.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5 text-xs">
                 @csrf
 
                 <!-- Category -->
@@ -111,31 +111,39 @@
                     </div>
                 </div>
 
-                <!-- Theme / Banner Style -->
-                <div class="space-y-1.5">
-                    <label class="block font-bold text-slate-700">Tema Warna Solid:</label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 has-[:checked]:border-blue-900 has-[:checked]:bg-slate-100">
-                            <input type="radio" name="image_gradient" value="from-blue-900 to-slate-900" checked class="text-blue-900">
-                            <span class="w-4 h-4 rounded-full bg-blue-900 shrink-0"></span>
-                            <span class="text-[11px] font-bold">Biru Tua</span>
-                        </label>
-                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 has-[:checked]:border-blue-900 has-[:checked]:bg-slate-100">
-                            <input type="radio" name="image_gradient" value="from-slate-800 to-slate-950" {{ old('image_gradient') === 'from-slate-800 to-slate-950' ? 'checked' : '' }} class="text-blue-900">
-                            <span class="w-4 h-4 rounded-full bg-slate-800 shrink-0"></span>
-                            <span class="text-[11px] font-bold">Hitam Slate</span>
-                        </label>
-                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 has-[:checked]:border-blue-900 has-[:checked]:bg-slate-100">
-                            <input type="radio" name="image_gradient" value="from-emerald-900 to-slate-900" {{ old('image_gradient') === 'from-emerald-900 to-slate-900' ? 'checked' : '' }} class="text-blue-900">
-                            <span class="w-4 h-4 rounded-full bg-emerald-900 shrink-0"></span>
-                            <span class="text-[11px] font-bold">Hijau Tua</span>
-                        </label>
-                        <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 has-[:checked]:border-blue-900 has-[:checked]:bg-slate-100">
-                            <input type="radio" name="image_gradient" value="from-rose-900 to-slate-900" {{ old('image_gradient') === 'from-rose-900 to-slate-900' ? 'checked' : '' }} class="text-blue-900">
-                            <span class="w-4 h-4 rounded-full bg-rose-900 shrink-0"></span>
-                            <span class="text-[11px] font-bold">Merah Tua</span>
-                        </label>
+                <!-- Tool Image Upload -->
+                <div class="space-y-2">
+                    <label class="block font-bold text-slate-700">Foto / Gambar Alat Praktik: <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                    <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                        <div class="flex flex-col sm:flex-row items-center gap-4">
+                            <!-- Preview Box -->
+                            <div id="imagePreviewContainer" class="w-24 h-24 rounded-2xl bg-slate-200 flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 relative group">
+                                <img id="imagePreview" src="" alt="Preview" class="w-full h-full object-cover hidden">
+                                <div id="imagePlaceholder" class="flex flex-col items-center justify-center text-slate-400">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span class="text-[9px] font-semibold mt-1">Belum ada foto</span>
+                                </div>
+                            </div>
+
+                            <!-- Upload Inputs -->
+                            <div class="space-y-1.5 flex-1 w-full text-center sm:text-left">
+                                <div class="flex items-center gap-2 justify-center sm:justify-start">
+                                    <label for="toolImageInput" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl font-bold cursor-pointer transition-all shadow-xs text-xs">
+                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                        <span>Pilih File Gambar</span>
+                                    </label>
+                                    <button type="button" id="removeImageBtn" class="hidden text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1">Batal</button>
+                                </div>
+                                <input type="file" id="toolImageInput" name="image" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden">
+                                <p class="text-[11px] text-slate-500">
+                                    Format: <strong>JPG, PNG, atau WebP</strong> (Maks. 5 MB). Gambar akan ditampilkan dengan rasio persegi (1:1) di katalog.
+                                </p>
+                            </div>
+                        </div>
                     </div>
+                    @error('image')
+                        <p class="text-[11px] text-rose-600 font-semibold">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Submit Button -->
@@ -152,4 +160,37 @@
 
     </div>
 </section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('toolImageInput');
+        const preview = document.getElementById('imagePreview');
+        const placeholder = document.getElementById('imagePlaceholder');
+        const removeBtn = document.getElementById('removeImageBtn');
+
+        if (input) {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        preview.src = event.target.result;
+                        preview.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                        removeBtn.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            removeBtn.addEventListener('click', () => {
+                input.value = '';
+                preview.src = '';
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                removeBtn.classList.add('hidden');
+            });
+        }
+    });
+</script>
 @endsection

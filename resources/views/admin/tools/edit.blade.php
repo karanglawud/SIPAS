@@ -35,7 +35,7 @@
             <div class="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
                 <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Informasi Master Alat</h3>
 
-                <form action="{{ route('admin.tools.update', $tool->id) }}" method="POST" class="space-y-4 text-xs">
+                <form action="{{ route('admin.tools.update', $tool->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4 text-xs">
                     @csrf
                     @method('PUT')
 
@@ -89,6 +89,57 @@
                         </div>
                     </div>
 
+                    <!-- Image Upload -->
+                    <div class="space-y-2 pt-1 border-t border-slate-100">
+                        <label class="block font-bold text-slate-700">Foto / Gambar Alat Praktik: <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                            <div class="flex flex-col sm:flex-row items-center gap-4">
+                                <!-- Preview Box -->
+                                <div id="editImagePreviewContainer" class="w-24 h-24 rounded-2xl bg-slate-200 flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 relative group">
+                                    @if($tool->image)
+                                        <img id="editImagePreview" src="{{ asset('storage/' . $tool->image) }}" alt="{{ $tool->name }}" class="w-full h-full object-cover">
+                                        <div id="editImagePlaceholder" class="hidden flex-col items-center justify-center text-slate-400">
+                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            <span class="text-[9px] font-semibold mt-1">Belum ada foto</span>
+                                        </div>
+                                    @else
+                                        <img id="editImagePreview" src="" alt="Preview" class="w-full h-full object-cover hidden">
+                                        <div id="editImagePlaceholder" class="flex flex-col items-center justify-center text-slate-400">
+                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            <span class="text-[9px] font-semibold mt-1">Belum ada foto</span>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- Inputs -->
+                                <div class="space-y-2 flex-1 w-full text-center sm:text-left">
+                                    <div class="flex items-center gap-2 justify-center sm:justify-start">
+                                        <label for="editToolImageInput" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl font-bold cursor-pointer transition-all shadow-xs text-xs">
+                                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                            <span>{{ $tool->image ? 'Ganti Foto' : 'Pilih File Gambar' }}</span>
+                                        </label>
+                                        <button type="button" id="editRemoveNewImageBtn" class="hidden text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1">Batal</button>
+                                    </div>
+                                    <input type="file" id="editToolImageInput" name="image" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden">
+                                    
+                                    @if($tool->image)
+                                        <label class="inline-flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer pt-1">
+                                            <input type="checkbox" name="remove_image" value="1" class="rounded text-rose-600 focus:ring-rose-500">
+                                            <span>Hapus foto saat ini (kembalikan ke tema default)</span>
+                                        </label>
+                                    @endif
+
+                                    <p class="text-[11px] text-slate-500">
+                                        Format: <strong>JPG, PNG, atau WebP</strong> (Maks. 5 MB). Gambar akan ditampilkan 1:1 di katalog alat.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        @error('image')
+                            <p class="text-[11px] text-rose-600 font-semibold">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-end">
                         <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-800 text-white font-bold rounded-xl shadow-xs hover:shadow-md transition-all">
                             Simpan Perubahan
@@ -124,6 +175,7 @@
                                 Tambah
                             </button>
                         </div>
+                        <input type="text" name="notes" placeholder="Catatan / No Seri (Opsional)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px]">
                     </form>
 
                     <!-- Units List -->
@@ -156,10 +208,13 @@
                                             <option value="rusak berat" {{ $unit->condition === 'rusak berat' ? 'selected' : '' }}>Rusak Berat</option>
                                         </select>
                                     </div>
-                                    <div class="col-span-2 flex items-center justify-between pt-1">
-                                        <span class="text-[10px] text-slate-400 truncate">{{ $unit->notes ?? '-' }}</span>
-                                        <button type="submit" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md font-bold text-[10px]">
-                                            Update
+                                    <div class="col-span-2">
+                                        <label class="block text-[10px] text-slate-400">Catatan / Keterangan:</label>
+                                        <input type="text" name="notes" value="{{ $unit->notes }}" placeholder="Catatan SN / Kondisi..." class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px]">
+                                    </div>
+                                    <div class="col-span-2 flex items-center justify-end pt-1">
+                                        <button type="submit" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-800 text-white rounded-md font-bold text-[10px] shadow-xs">
+                                            Update Unit
                                         </button>
                                     </div>
                                 </form>
@@ -174,4 +229,46 @@
 
     </div>
 </section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('editToolImageInput');
+        const preview = document.getElementById('editImagePreview');
+        const placeholder = document.getElementById('editImagePlaceholder');
+        const removeNewBtn = document.getElementById('editRemoveNewImageBtn');
+        const originalSrc = preview ? preview.src : '';
+
+        if (input) {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        preview.src = event.target.result;
+                        preview.classList.remove('hidden');
+                        if (placeholder) placeholder.classList.add('hidden');
+                        if (removeNewBtn) removeNewBtn.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            if (removeNewBtn) {
+                removeNewBtn.addEventListener('click', () => {
+                    input.value = '';
+                    if (originalSrc) {
+                        preview.src = originalSrc;
+                        preview.classList.remove('hidden');
+                        if (placeholder) placeholder.classList.add('hidden');
+                    } else {
+                        preview.src = '';
+                        preview.classList.add('hidden');
+                        if (placeholder) placeholder.classList.remove('hidden');
+                    }
+                    removeNewBtn.classList.add('hidden');
+                });
+            }
+        }
+    });
+</script>
 @endsection

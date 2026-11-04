@@ -137,9 +137,13 @@
                         <div class="space-y-3">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-2xl bg-blue-900 flex items-center justify-center text-white font-mono font-bold text-xs shadow-2xs shrink-0">
-                                        {{ substr($tool->code, 0, 3) }}
-                                    </div>
+                                    @if($tool->image)
+                                        <img src="{{ asset('storage/' . $tool->image) }}" alt="{{ $tool->name }}" class="w-12 h-12 rounded-2xl object-cover shrink-0 border border-slate-200 shadow-2xs">
+                                    @else
+                                        <div class="w-12 h-12 rounded-2xl bg-blue-900 flex items-center justify-center text-white font-mono font-bold text-xs shadow-2xs shrink-0">
+                                            {{ substr($tool->code, 0, 3) }}
+                                        </div>
+                                    @endif
                                     <div>
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200">

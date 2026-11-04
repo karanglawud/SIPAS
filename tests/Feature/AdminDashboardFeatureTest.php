@@ -9,6 +9,8 @@ use App\Models\Tool;
 use App\Models\ToolUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminDashboardFeatureTest extends TestCase
@@ -183,6 +185,64 @@ class AdminDashboardFeatureTest extends TestCase
         $this->assertEquals(15000, $data['tool']->fine_per_day);
     }
 
+    public function test_admin_can_create_and_update_tool_with_image(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+
+        $file = UploadedFile::fake()->image('test_tool.jpg', 400, 400);
+
+        $response = $this->actingAs($admin)->post(route('admin.tools.store'), [
+            'category_id' => $category->id,
+            'code' => 'LAB-CAM-99',
+            'name' => 'Kamera Uji',
+            'spec' => 'Kamera Praktik',
+            'location' => 'Lab 1',
+            'total_stock' => 2,
+            'fine_per_day' => 5000,
+            'max_days' => 3,
+            'image' => $file,
+        ]);
+
+        $response->assertRedirect(route('admin.tools.index'));
+        $tool = Tool::where('code', 'LAB-CAM-99')->first();
+        $this->assertNotNull($tool);
+        $this->assertNotNull($tool->image);
+        Storage::disk('public')->assertExists($tool->image);
+
+        // Update with new image
+        $newFile = UploadedFile::fake()->image('updated_tool.png', 400, 400);
+        $updateResponse = $this->actingAs($admin)->put(route('admin.tools.update', $tool->id), [
+            'name' => 'Kamera Uji Updated',
+            'code' => 'LAB-CAM-99',
+            'location' => 'Lab 2',
+            'fine_per_day' => 6000,
+            'max_days' => 4,
+            'image' => $newFile,
+        ]);
+
+        $updateResponse->assertRedirect(route('admin.tools.index'));
+        $tool->refresh();
+        $this->assertNotNull($tool->image);
+        Storage::disk('public')->assertExists($tool->image);
+
+        // Update with remove_image checkbox
+        $removeResponse = $this->actingAs($admin)->put(route('admin.tools.update', $tool->id), [
+            'name' => 'Kamera Uji Tanpa Foto',
+            'code' => 'LAB-CAM-99',
+            'location' => 'Lab 2',
+            'fine_per_day' => 6000,
+            'max_days' => 4,
+            'remove_image' => '1',
+        ]);
+
+        $removeResponse->assertRedirect(route('admin.tools.index'));
+        $tool->refresh();
+        $this->assertNull($tool->image);
+    }
+
     public function test_admin_can_add_unit_to_existing_tool(): void
     {
         $admin = $this->createAdmin();
@@ -201,6 +261,28 @@ class AdminDashboardFeatureTest extends TestCase
         $this->assertEquals(3, $data['tool']->total_stock);
         $this->assertEquals(3, $data['tool']->available_stock);
         $this->assertDatabaseHas('tool_units', ['unit_code' => 'LAB-OSC-01-EXTRA']);
+    }
+
+    public function test_admin_can_add_unit_without_notes_and_auto_code(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 2);
+
+        $response = $this->actingAs($admin)->post(route('admin.tools.units.store', $data['tool']->id), [
+            'condition' => 'baik',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $data['tool']->refresh();
+        $this->assertEquals(3, $data['tool']->total_stock);
+        $this->assertEquals(3, $data['tool']->available_stock);
+        $this->assertDatabaseHas('tool_units', [
+            'tool_id' => $data['tool']->id,
+            'unit_code' => $data['tool']->code.'-U03',
+            'notes' => null,
+        ]);
     }
 
     public function test_admin_cannot_delete_tool_with_active_loans(): void

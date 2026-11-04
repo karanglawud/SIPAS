@@ -303,6 +303,76 @@ class AdminLoanController extends Controller
         return back()->with('success', 'Pengembalian alat No. '.$loan->ticket_number.' berhasil diproses.');
     }
 
+    public function printTicket(Loan $loan): View|RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $loan->load(['user', 'tool.category', 'approver']);
+
+        $backRoute = route('admin.loans.index');
+        $backLabel = 'Kembali ke Panel Admin';
+
+        return view('loans.print', compact('loan', 'backRoute', 'backLabel'));
+    }
+
+    public function printReport(Request $request): View|RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $admin = Auth::user();
+        $query = Loan::with(['user', 'tool.category', 'approver'])->latest();
+
+        if ($admin->category_scope && $admin->category_scope !== 'all') {
+            $query->whereHas('tool.category', function ($q) use ($admin) {
+                $q->where('slug', $admin->category_scope);
+            });
+        }
+
+        $statusTab = $request->get('status', 'all');
+        if ($statusTab === 'menunggu') {
+            $query->where('status', 'menunggu');
+        } elseif ($statusTab === 'berjalan') {
+            $query->whereIn('status', ['disetujui', 'dipinjam']);
+        } elseif ($statusTab === 'selesai') {
+            $query->whereIn('status', ['selesai', 'ditolak', 'dibatalkan']);
+        }
+
+        if ($request->filled('q')) {
+            $q = $request->input('q');
+            $query->where(function ($sub) use ($q) {
+                $sub->where('ticket_number', 'like', "%{$q}%")
+                    ->orWhereHas('user', function ($u) use ($q) {
+                        $u->where('name', 'like', "%{$q}%")
+                            ->orWhere('identifier', 'like', "%{$q}%")
+                            ->orWhere('class_or_dept', 'like', "%{$q}%");
+                    })
+                    ->orWhereHas('tool', function ($t) use ($q) {
+                        $t->where('name', 'like', "%{$q}%")
+                            ->orWhere('code', 'like', "%{$q}%");
+                    });
+            });
+        }
+
+        $loans = $query->get();
+
+        $stats = [
+            'total' => $loans->count(),
+            'menunggu' => $loans->where('status', 'menunggu')->count(),
+            'berjalan' => $loans->whereIn('status', ['disetujui', 'dipinjam'])->count(),
+            'selesai' => $loans->where('status', 'selesai')->count(),
+            'total_denda' => (int) $loans->sum('fine_amount'),
+        ];
+
+        $backRoute = route('admin.loans.index');
+        $backLabel = 'Kembali ke Panel Admin';
+
+        return view('admin.loans.print-report', compact('loans', 'admin', 'stats', 'statusTab', 'backRoute', 'backLabel'));
+    }
+
     public function sendMessage(Request $request, Loan $loan): RedirectResponse
     {
         if ($redirect = $this->checkAdmin()) {

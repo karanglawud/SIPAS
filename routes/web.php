@@ -27,6 +27,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/pinjam/{tool?}', [LoanController::class, 'create'])->name('loans.create');
 Route::post('/pinjam', [LoanController::class, 'store'])->name('loans.store');
 Route::get('/riwayat', [LoanController::class, 'index'])->name('loans.index');
+Route::get('/riwayat/cetak', [LoanController::class, 'printHistory'])->name('loans.history.print');
 Route::post('/riwayat/{loan}/batalkan', [LoanController::class, 'cancel'])->name('loans.cancel');
 Route::get('/tiket/{loan}/cetak', [LoanController::class, 'printTicket'])->name('loans.print');
 
@@ -37,6 +38,8 @@ Route::get('/pesan', [MessageController::class, 'index'])->name('messages.index'
 Route::prefix('admin')->name('admin.')->group(function () {
     // Peminjaman Verification & Actions
     Route::get('/peminjaman', [AdminLoanController::class, 'index'])->name('loans.index');
+    Route::get('/peminjaman/cetak-rekap', [AdminLoanController::class, 'printReport'])->name('loans.report.print');
+    Route::get('/peminjaman/{loan}/cetak', [AdminLoanController::class, 'printTicket'])->name('loans.print');
     Route::post('/peminjaman/{loan}/approve', [AdminLoanController::class, 'approve'])->name('loans.approve');
     Route::post('/peminjaman/{loan}/handover', [AdminLoanController::class, 'handover'])->name('loans.handover');
     Route::post('/peminjaman/{loan}/reject', [AdminLoanController::class, 'reject'])->name('loans.reject');
