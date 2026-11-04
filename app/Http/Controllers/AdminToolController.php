@@ -1,0 +1,294 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Category;
+use App\Models\Tool;
+use App\Models\ToolUnit;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+
+class AdminToolController extends Controller
+{
+    private function checkAdmin(): ?RedirectResponse
+    {
+        if (! Auth::check() || ! Auth::user()->isAdmin()) {
+            return redirect()->route('login');
+        }
+
+        return null;
+    }
+
+    private function getAvailableCategories()
+    {
+        $admin = Auth::user();
+        if ($admin->category_scope && $admin->category_scope !== 'all') {
+            return Category::where('slug', $admin->category_scope)->get();
+        }
+
+        return Category::all();
+    }
+
+    public function index(Request $request): View|RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $admin = Auth::user();
+        $categories = $this->getAvailableCategories();
+        $categoryIds = $categories->pluck('id');
+
+        $query = Tool::with(['category', 'units'])->whereIn('category_id', $categoryIds);
+
+        if ($request->filled('q')) {
+            $q = $request->input('q');
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('code', 'like', "%{$q}%")
+                    ->orWhere('location', 'like', "%{$q}%");
+            });
+        }
+
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $query->whereHas('category', function ($sub) use ($request) {
+                $sub->where('slug', $request->input('category'));
+            });
+        }
+
+        $tools = $query->latest()->paginate(12);
+
+        $totalTools = Tool::whereIn('category_id', $categoryIds)->count();
+        $totalUnits = ToolUnit::whereHas('tool', fn ($q) => $q->whereIn('category_id', $categoryIds))->count();
+        $readyUnits = ToolUnit::whereHas('tool', fn ($q) => $q->whereIn('category_id', $categoryIds))
+            ->where('status', 'tersedia')->count();
+        $borrowedUnits = ToolUnit::whereHas('tool', fn ($q) => $q->whereIn('category_id', $categoryIds))
+            ->where('status', 'dipinjam')->count();
+
+        return view('admin.tools.index', compact(
+            'tools',
+            'categories',
+            'admin',
+            'totalTools',
+            'totalUnits',
+            'readyUnits',
+            'borrowedUnits'
+        ));
+    }
+
+    public function create(): View|RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $categories = $this->getAvailableCategories();
+
+        return view('admin.tools.create', compact('categories'));
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $categories = $this->getAvailableCategories();
+        $allowedCatIds = $categories->pluck('id')->toArray();
+
+        $validated = $request->validate([
+            'category_id' => 'required|in:'.implode(',', $allowedCatIds),
+            'code' => 'required|string|max:50|unique:tools,code',
+            'name' => 'required|string|max:255',
+            'spec' => 'nullable|string|max:1000',
+            'location' => 'required|string|max:255',
+            'total_stock' => 'required|integer|min:1|max:100',
+            'fine_per_day' => 'required|integer|min:0',
+            'max_days' => 'required|integer|min:1|max:30',
+            'image_gradient' => 'nullable|string|max:100',
+        ], [
+            'category_id.required' => 'Pilih kategori alat yang sesuai dengan wewenang Anda.',
+            'code.unique' => 'Kode alat ini sudah digunakan oleh alat lain.',
+            'name.required' => 'Nama alat praktik wajib diisi.',
+            'location.required' => 'Lokasi ruang penyimpanan wajib diisi.',
+        ]);
+
+        $gradient = $validated['image_gradient'] ?: 'from-blue-600 to-indigo-700';
+
+        $tool = Tool::create([
+            'category_id' => $validated['category_id'],
+            'code' => strtoupper($validated['code']),
+            'name' => $validated['name'],
+            'spec' => $validated['spec'],
+            'location' => $validated['location'],
+            'total_stock' => $validated['total_stock'],
+            'available_stock' => $validated['total_stock'],
+            'fine_per_day' => $validated['fine_per_day'],
+            'max_days' => $validated['max_days'],
+            'image_gradient' => $gradient,
+        ]);
+
+        // Generate initial physical units automatically
+        for ($i = 1; $i <= $validated['total_stock']; $i++) {
+            $unitCode = strtoupper($tool->code).'-U'.str_pad((string) $i, 2, '0', STR_PAD_LEFT);
+            ToolUnit::create([
+                'tool_id' => $tool->id,
+                'unit_code' => $unitCode,
+                'status' => 'tersedia',
+                'condition' => 'baik',
+                'notes' => 'Unit perdana terdata',
+            ]);
+        }
+
+        return redirect()->route('admin.tools.index')->with('success', 'Alat praktik baru "'.$tool->name.'" berhasil ditambahkan beserta '.$validated['total_stock'].' unit fisik.');
+    }
+
+    public function edit(Tool $tool): View|RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $categories = $this->getAvailableCategories();
+        if (! $categories->contains('id', $tool->category_id)) {
+            abort(403, 'Anda tidak memiliki hak akses mengelola alat pada kategori ini.');
+        }
+
+        $tool->load('units');
+
+        return view('admin.tools.edit', compact('tool', 'categories'));
+    }
+
+    public function update(Request $request, Tool $tool): RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $categories = $this->getAvailableCategories();
+        if (! $categories->contains('id', $tool->category_id)) {
+            abort(403, 'Anda tidak memiliki hak akses mengelola alat ini.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:tools,code,'.$tool->id,
+            'spec' => 'nullable|string|max:1000',
+            'location' => 'required|string|max:255',
+            'fine_per_day' => 'required|integer|min:0',
+            'max_days' => 'required|integer|min:1|max:30',
+            'image_gradient' => 'nullable|string|max:100',
+        ]);
+
+        $tool->update([
+            'name' => $validated['name'],
+            'code' => strtoupper($validated['code']),
+            'spec' => $validated['spec'],
+            'location' => $validated['location'],
+            'fine_per_day' => $validated['fine_per_day'],
+            'max_days' => $validated['max_days'],
+            'image_gradient' => $validated['image_gradient'] ?: $tool->image_gradient,
+        ]);
+
+        return redirect()->route('admin.tools.index')->with('success', 'Rincian alat praktik "'.$tool->name.'" berhasil diperbarui.');
+    }
+
+    public function destroy(Tool $tool): RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $hasActiveLoans = $tool->loans()->whereIn('status', ['menunggu', 'disetujui', 'dipinjam'])->exists();
+        if ($hasActiveLoans) {
+            return back()->with('error', 'Alat ini tidak dapat dihapus karena masih ada tiket peminjaman aktif atau menunggu verifikasi.');
+        }
+
+        $toolName = $tool->name;
+        $tool->delete();
+
+        return redirect()->route('admin.tools.index')->with('success', 'Alat "'.$toolName.'" beserta unit fisiknya telah berhasil dihapus.');
+    }
+
+    public function storeUnit(Request $request, Tool $tool): RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $validated = $request->validate([
+            'unit_code' => 'nullable|string|max:50|unique:tool_units,unit_code',
+            'condition' => 'required|in:baik,rusak ringan,rusak berat',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $unitCode = $validated['unit_code']
+            ? strtoupper($validated['unit_code'])
+            : strtoupper($tool->code).'-U'.str_pad((string) ($tool->units()->count() + 1), 2, '0', STR_PAD_LEFT);
+
+        ToolUnit::create([
+            'tool_id' => $tool->id,
+            'unit_code' => $unitCode,
+            'status' => 'tersedia',
+            'condition' => $validated['condition'],
+            'notes' => $validated['notes'],
+        ]);
+
+        $tool->increment('total_stock');
+        $tool->increment('available_stock');
+
+        return back()->with('success', 'Unit fisik baru ('.$unitCode.') berhasil ditambahkan ke inventaris.');
+    }
+
+    public function updateUnit(Request $request, ToolUnit $unit): RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:tersedia,rusak,hilang',
+            'condition' => 'required|in:baik,rusak ringan,rusak berat',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $oldStatus = $unit->status;
+        $unit->update([
+            'status' => $validated['status'],
+            'condition' => $validated['condition'],
+            'notes' => $validated['notes'],
+        ]);
+
+        // Recalculate available_stock for the tool
+        $availableCount = $unit->tool->units()->where('status', 'tersedia')->count();
+        $unit->tool->update(['available_stock' => $availableCount]);
+
+        return back()->with('success', 'Status unit fisik '.$unit->unit_code.' berhasil diperbarui.');
+    }
+
+    public function destroyUnit(ToolUnit $unit): RedirectResponse
+    {
+        if ($redirect = $this->checkAdmin()) {
+            return $redirect;
+        }
+
+        if ($unit->status === 'dipinjam') {
+            return back()->with('error', 'Unit sedang dipinjam dan tidak dapat dihapus.');
+        }
+
+        $tool = $unit->tool;
+        $unitCode = $unit->unit_code;
+        $wasAvailable = $unit->status === 'tersedia';
+
+        $unit->delete();
+
+        $tool->decrement('total_stock');
+        if ($wasAvailable && $tool->available_stock > 0) {
+            $tool->decrement('available_stock');
+        }
+
+        return back()->with('success', 'Unit fisik '.$unitCode.' berhasil dihapus dari sistem.');
+    }
+}

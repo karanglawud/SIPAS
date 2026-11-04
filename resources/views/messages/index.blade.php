@@ -17,7 +17,7 @@
                         <h2 class="text-base font-bold text-slate-900">Pemberitahuan Peminjaman</h2>
                         <p class="text-[11px] text-slate-500">Kanal Resmi Petugas PJ Kategori Alat</p>
                     </div>
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
                 </div>
 
                 <!-- Channels List -->
@@ -29,9 +29,9 @@
                             $isActive = $activeCategory && $activeCategory->id === $cat->id;
                         @endphp
                         <a href="{{ route('messages.index', ['kategori' => $cat->slug]) }}" 
-                           class="p-4 flex items-start gap-3 transition-colors {{ $isActive ? 'bg-white border-l-4 border-blue-600 shadow-xs' : 'hover:bg-slate-100/80' }}">
+                           class="p-4 flex items-start gap-3 transition-colors {{ $isActive ? 'bg-white border-l-4 border-blue-900 shadow-2xs' : 'hover:bg-slate-100/80' }}">
                             
-                            <div class="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                            <div class="w-11 h-11 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
                                 {{ strtoupper(substr($cat->name, 0, 2)) }}
                             </div>
 
@@ -54,7 +54,7 @@
                                         {{ $latestMsg ? $latestMsg->message : 'Belum ada pemberitahuan baru' }}
                                     </p>
                                     @if($unreadCount > 0)
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white shrink-0">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-900 text-white shrink-0">
                                             {{ $unreadCount }}
                                         </span>
                                     @endif
@@ -67,20 +67,20 @@
 
             </div>
 
-            <!-- Right Panel: Message Thread (WhatsApp Inspired) -->
+            <!-- Right Panel: Message Thread (Clean School Notification Center) -->
             <div class="flex-grow flex flex-col bg-slate-50">
                 
                 @if($activeCategory)
                     <!-- Active Channel Header -->
                     <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-blue-700 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                            <div class="w-10 h-10 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-bold text-sm shadow-2xs">
                                 {{ strtoupper(substr($activeCategory->name, 0, 2)) }}
                             </div>
                             <div>
                                 <div class="flex items-center gap-2">
                                     <h3 class="text-sm font-bold text-slate-900">{{ $activeCategory->name }}</h3>
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                                         {{ $activeCategory->badge }}
                                     </span>
                                 </div>
@@ -106,7 +106,7 @@
                             </div>
                         @else
                             <div class="text-center my-2">
-                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white border border-slate-200 text-slate-500 shadow-xs">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white border border-slate-200 text-slate-500 shadow-2xs">
                                     Riwayat Pemberitahuan Resmi
                                 </span>
                             </div>
@@ -120,7 +120,7 @@
                                     </span>
 
                                     <!-- Message Bubble -->
-                                    <div class="bg-white rounded-2xl rounded-tl-xs p-4 border border-slate-200 shadow-xs space-y-3 text-xs text-slate-800 leading-relaxed">
+                                    <div class="bg-white rounded-2xl rounded-tl-xs p-4 border border-slate-200 shadow-2xs space-y-3 text-xs text-slate-800 leading-relaxed">
                                         
                                         <p>{{ $msg->message }}</p>
 
@@ -128,7 +128,7 @@
                                         @if($msg->loan)
                                             <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-[11px]">
                                                 <div class="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
-                                                    <span class="font-mono font-bold text-blue-700">{{ $msg->loan->ticket_number }}</span>
+                                                    <span class="font-mono font-bold text-blue-900">{{ $msg->loan->ticket_number }}</span>
                                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $msg->loan->status_badge }}">
                                                         {{ $msg->loan->status_label }}
                                                     </span>
@@ -144,7 +144,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="pt-1">
-                                                    <a href="{{ route('loans.index') }}" class="text-blue-600 hover:text-blue-800 font-bold hover:underline flex items-center gap-1">
+                                                    <a href="{{ route('loans.index') }}" class="text-blue-900 hover:text-blue-950 font-bold hover:underline flex items-center gap-1">
                                                         <span>Buka Riwayat Peminjaman Ini</span>
                                                         &rarr;
                                                     </a>
@@ -169,7 +169,7 @@
 
                     <!-- Bottom Bar (One-Way Info Note) -->
                     <div class="p-3 bg-white border-t border-slate-200 text-center text-[11px] text-slate-500 flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg class="w-4 h-4 text-blue-900 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span>Kanal Pemberitahuan Resmi SIPAS — SMK Negeri 5 Surakarta (Satu Arah dari Petugas PJ Kategori Alat)</span>
                     </div>
 

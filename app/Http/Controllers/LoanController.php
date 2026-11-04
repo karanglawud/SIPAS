@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Loan;
 use App\Models\Message;
 use App\Models\Tool;
+use App\Models\ToolUnit;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,23 +15,26 @@ class LoanController extends Controller
 {
     public function create(Request $request, $tool_id = null)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login')->with('info', 'Silakan masuk terlebih dahulu untuk mengajukan peminjaman.');
         }
 
-        $selectedTool = null;
-        if ($tool_id) {
-            $selectedTool = Tool::with('category')->findOrFail($tool_id);
+        if (! $tool_id) {
+            return redirect()->route('catalog.index')->with('info', 'Silakan pilih alat yang ingin dipinjam terlebih dahulu dari katalog.');
         }
 
-        $tools = Tool::with('category')->where('available_stock', '>', 0)->get();
+        $selectedTool = Tool::with('category')->findOrFail($tool_id);
 
-        return view('loans.create', compact('selectedTool', 'tools'));
+        if ($selectedTool->available_stock <= 0) {
+            return redirect()->route('catalog.index')->with('error', 'Maaf, stok alat "'.$selectedTool->name.'" saat ini sedang habis atau seluruh unit sedang dipinjam.');
+        }
+
+        return view('loans.create', compact('selectedTool'));
     }
 
     public function store(Request $request)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
@@ -54,7 +58,7 @@ class LoanController extends Controller
         $tool = Tool::with('category.admins')->findOrFail($validated['tool_id']);
 
         if ($validated['quantity'] > $tool->available_stock) {
-            return back()->withInput()->with('error', 'Jumlah unit yang diajukan (' . $validated['quantity'] . ') melebihi stok tersedia saat ini (' . $tool->available_stock . ' unit).');
+            return back()->withInput()->with('error', 'Jumlah unit yang diajukan ('.$validated['quantity'].') melebihi stok tersedia saat ini ('.$tool->available_stock.' unit).');
         }
 
         $proposalPath = null;
@@ -68,7 +72,7 @@ class LoanController extends Controller
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = $startDate->copy()->addDays((int) $validated['duration_days']);
 
-        $ticketNumber = 'SIPAS-' . date('Y') . '-' . str_pad(Loan::count() + 101, 3, '0', STR_PAD_LEFT);
+        $ticketNumber = 'SIPAS-'.date('Y').'-'.str_pad(Loan::count() + 101, 3, '0', STR_PAD_LEFT);
 
         $loan = Loan::create([
             'ticket_number' => $ticketNumber,
@@ -94,17 +98,17 @@ class LoanController extends Controller
                 'category_id' => $tool->category_id,
                 'loan_id' => $loan->id,
                 'type' => 'info',
-                'message' => 'Pengajuan peminjaman ' . $tool->name . ' (' . $loan->quantity . ' unit) telah terdaftar dengan Nomor Tiket ' . $ticketNumber . '. Pengajuan sedang ditinjau oleh tim sarana.',
+                'message' => 'Pengajuan peminjaman '.$tool->name.' ('.$loan->quantity.' unit) telah terdaftar dengan Nomor Tiket '.$ticketNumber.'. Pengajuan sedang ditinjau oleh tim sarana.',
                 'is_read' => false,
             ]);
         }
 
-        return redirect()->route('loans.index')->with('success', 'Permohonan peminjaman berhasil diajukan dengan No. Tiket ' . $ticketNumber . '. Pantau perkembangan status melalui menu Riwayat atau Pesan.');
+        return redirect()->route('loans.index')->with('success', 'Permohonan peminjaman berhasil diajukan dengan No. Tiket '.$ticketNumber.'. Pantau perkembangan status melalui menu Riwayat atau Pesan.');
     }
 
     public function index()
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
@@ -121,5 +125,61 @@ class LoanController extends Controller
         $loan->load(['user', 'tool.category', 'approver']);
 
         return view('loans.print', compact('loan'));
+    }
+
+    public function cancel(Request $request, Loan $loan)
+    {
+        if (! Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ($loan->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki hak untuk membatalkan pengajuan peminjaman ini.');
+        }
+
+        if (! in_array($loan->status, ['menunggu', 'disetujui'])) {
+            return back()->with('error', 'Peminjaman tidak dapat dibatalkan karena status saat ini: '.$loan->status_label.'.');
+        }
+
+        // Jika status sebelumnya disetujui, kembalikan unit fisik dan stok alat
+        if ($loan->status === 'disetujui' && ! empty($loan->assigned_units)) {
+            foreach ($loan->assigned_units as $unitCode) {
+                ToolUnit::where('unit_code', $unitCode)->update([
+                    'status' => 'tersedia',
+                ]);
+            }
+            $loan->tool->increment('available_stock', $loan->quantity);
+        }
+
+        $nowFormatted = Carbon::now()->translatedFormat('d M Y, H:i');
+        $loan->update([
+            'status' => 'dibatalkan',
+            'pj_notes' => trim(($loan->pj_notes ? $loan->pj_notes.' | ' : '').'Dibatalkan oleh peminjam ('.Auth::user()->name.') pada '.$nowFormatted),
+        ]);
+
+        $adminPj = $loan->tool->category->admins->first() ?? User::where('role', 'admin')->first();
+        if ($adminPj) {
+            Message::create([
+                'sender_id' => Auth::id(),
+                'recipient_id' => $adminPj->id,
+                'category_id' => $loan->tool->category_id,
+                'loan_id' => $loan->id,
+                'type' => 'warning',
+                'message' => 'Peminjam ('.Auth::user()->name.') telah MEMBATALKAN permohonan peminjaman '.$loan->tool->name.' (No. Tiket '.$loan->ticket_number.').',
+                'is_read' => false,
+            ]);
+        }
+
+        Message::create([
+            'sender_id' => $adminPj ? $adminPj->id : Auth::id(),
+            'recipient_id' => Auth::id(),
+            'category_id' => $loan->tool->category_id,
+            'loan_id' => $loan->id,
+            'type' => 'info',
+            'message' => 'Permohonan peminjaman '.$loan->tool->name.' (No. Tiket '.$loan->ticket_number.') telah berhasil dibatalkan.',
+            'is_read' => false,
+        ]);
+
+        return back()->with('success', 'Permohonan peminjaman No. Tiket '.$loan->ticket_number.' berhasil dibatalkan.');
     }
 }

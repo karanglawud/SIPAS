@@ -25,10 +25,10 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             if (Auth::user()->isAdmin()) {
-                return redirect()->route('admin.loans.index')->with('success', 'Selamat datang, ' . Auth::user()->name . '! Anda masuk sebagai Admin PJ.');
+                return redirect()->route('admin.loans.index')->with('success', 'Selamat datang, '.Auth::user()->name.'! Anda masuk sebagai Admin PJ.');
             }
 
-            return redirect()->route('catalog.index')->with('success', 'Selamat datang kembali, ' . Auth::user()->name . ' (' . ucfirst(Auth::user()->role) . ')!');
+            return redirect()->route('catalog.index')->with('success', 'Selamat datang kembali, '.Auth::user()->name.' ('.ucfirst(Auth::user()->role).')!');
         }
 
         return back()->withErrors([
@@ -43,15 +43,37 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        $validated = $request->validate([
+        $role = $request->input('role', 'siswa');
+
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:siswa,guru',
             'identifier' => 'required|string|max:50',
-            'class_or_dept' => 'required|string|max:100',
             'phone' => 'nullable|string|max:20',
+        ];
+
+        if ($role === 'siswa') {
+            $rules['grade'] = 'required|in:X,XI,XII';
+            $rules['major'] = 'required|string|max:50';
+            $rules['subclass'] = 'required|string|max:20';
+        } else {
+            $rules['class_or_dept'] = 'required|string|max:100';
+        }
+
+        $validated = $request->validate($rules, [
+            'grade.required' => 'Pilih tingkat kelas (X, XI, atau XII).',
+            'grade.in' => 'Tingkat kelas harus berupa X, XI, atau XII.',
+            'major.required' => 'Pilih jurusan kejuruan Anda.',
+            'subclass.required' => 'Pilih rombel / subclass kelas.',
+            'class_or_dept.required' => 'Mata pelajaran / unit kerja wajib diisi.',
+            'identifier.required' => $role === 'guru' ? 'NIP Guru wajib diisi.' : 'NISN Siswa wajib diisi.',
         ]);
+
+        $classOrDept = $role === 'siswa'
+            ? strtoupper(trim($validated['grade'].' '.$validated['major'].' '.$validated['subclass']))
+            : $validated['class_or_dept'];
 
         $user = User::create([
             'name' => $validated['name'],
@@ -59,14 +81,14 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'identifier' => $validated['identifier'],
-            'class_or_dept' => $validated['class_or_dept'],
+            'class_or_dept' => $classOrDept,
             'phone' => $validated['phone'],
             'category_scope' => null,
         ]);
 
         Auth::login($user);
 
-        return redirect()->route('catalog.index')->with('success', 'Pendaftaran berhasil! Akun Anda telah aktif sebagai ' . ucfirst($user->role) . '. Silakan pilih alat yang ingin dipinjam.');
+        return redirect()->route('catalog.index')->with('success', 'Pendaftaran berhasil! Akun Anda telah aktif sebagai '.ucfirst($user->role).' ('.$user->class_or_dept.'). Silakan pilih alat yang ingin dipinjam.');
     }
 
     public function logout(Request $request)

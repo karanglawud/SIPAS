@@ -67,6 +67,7 @@ class Loan extends Model
             'dipinjam' => 'bg-blue-100 text-blue-800 border-blue-300',
             'selesai' => 'bg-slate-100 text-slate-800 border-slate-300',
             'ditolak' => 'bg-rose-100 text-rose-800 border-rose-300',
+            'dibatalkan' => 'bg-rose-50 text-rose-700 border-rose-200',
             default => 'bg-slate-100 text-slate-700 border-slate-200',
         };
     }
@@ -79,6 +80,7 @@ class Loan extends Model
             'dipinjam' => 'Sedang Dipinjam',
             'selesai' => 'Selesai & Dikembalikan',
             'ditolak' => 'Ditolak',
+            'dibatalkan' => 'Dibatalkan',
             default => ucfirst($this->status),
         };
     }

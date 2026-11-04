@@ -22,10 +22,10 @@
         <!-- 4 Categories Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             @foreach($categories as $cat)
-                <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs hover:border-blue-300 hover:shadow-md transition-all space-y-5">
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs hover:border-slate-400 transition-all space-y-5">
                     
                     <div class="flex items-center justify-between">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-800">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
                             {{ $cat->badge }}
                         </span>
                         <span class="text-xs font-mono font-bold text-slate-500">
@@ -53,7 +53,7 @@
                     <!-- Quick Action -->
                     <div class="pt-2 flex items-center justify-between text-xs">
                         <span class="text-slate-400">Peminjaman harus disetujui PJ ini.</span>
-                        <a href="{{ route('catalog.index', ['category' => $cat->slug]) }}" class="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1">
+                        <a href="{{ route('catalog.index', ['category' => $cat->slug]) }}" class="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1">
                             <span>Lihat Alat di Kategori Ini</span>
                             &rarr;
                         </a>
@@ -64,8 +64,8 @@
         </div>
 
         <!-- Operating Hours & Office Location Banner -->
-        <div class="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white space-y-4 shadow-xl">
-            <h3 class="text-lg font-bold">Jam Layanan & Pengambilan Alat Sekolah</h3>
+        <div class="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white space-y-4 shadow-md border border-slate-800">
+            <h3 class="text-lg font-bold">Jam Layanan &amp; Pengambilan Alat Sekolah</h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-300">
                 <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
                     <span class="text-slate-400 block text-[11px]">Hari Operasional:</span>
@@ -77,7 +77,7 @@
                 </div>
                 <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
                     <span class="text-slate-400 block text-[11px]">Lokasi Ruang / Lab Praktik:</span>
-                    <strong class="text-white text-sm">Ruang Alat & Lab Praktik Terkait</strong>
+                    <strong class="text-white text-sm">Ruang Alat &amp; Lab Praktik Terkait</strong>
                 </div>
             </div>
         </div>
