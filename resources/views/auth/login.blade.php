@@ -43,7 +43,7 @@
                     </label>
                 </div>
 
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all">
+                <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all">
                     Masuk
                 </button>
             </form>

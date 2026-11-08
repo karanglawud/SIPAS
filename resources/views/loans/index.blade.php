@@ -22,13 +22,13 @@
 
             <div class="flex items-center gap-2.5 shrink-0">
                 @if(!$loans->isEmpty())
-                    <a href="{{ route('loans.history.print') }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition-all">
+                    <a href="{{ route('loans.history.print') }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition-all">
                         <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                         <span>Cetak Rekap Riwayat</span>
                     </a>
                 @endif
 
-                <a href="{{ route('catalog.index') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-800 text-white font-bold text-xs shadow-xs transition-all">
+                <a href="{{ route('catalog.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-800 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     <span>Ajukan Pinjam Baru</span>
                 </a>
@@ -172,7 +172,7 @@
                             <div class="flex items-center gap-2 shrink-0">
                                 @if(in_array($loan->status, ['menunggu', 'disetujui']))
                                     <button type="button" 
-                                            class="btn-open-cancel-modal px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                            class="btn-open-cancel-modal px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
                                             data-ticket="{{ $loan->ticket_number }}"
                                             data-tool="{{ $loan->tool->name }}"
                                             data-action="{{ route('loans.cancel', $loan->id) }}">
@@ -189,7 +189,7 @@
                                 @endif
 
                                 @if($loan->status === 'dibatalkan')
-                                    <span class="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-xl text-xs font-semibold border border-slate-200">
+                                    <span class="px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-semibold border border-slate-200 inline-flex items-center">
                                         Permohonan Dibatalkan
                                     </span>
                                 @endif

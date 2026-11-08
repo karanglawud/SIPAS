@@ -47,10 +47,10 @@
                             <a href="{{ route('admin.messages.index') }}" class="px-3.5 py-2 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.messages.*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50' }}">
                                 Kirim Pesan
                             </a>
-                            <a href="{{ route('catalog.index') }}" class="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                            <a href="{{ route('catalog.index') }}" class="px-3.5 py-2 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('catalog.*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50' }}">
                                 Pratinjau Katalog
                             </a>
-                            <a href="{{ route('about.pj') }}" class="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                            <a href="{{ route('about.pj') }}" class="px-3.5 py-2 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('about.pj') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50' }}">
                                 Tim PJ Alat
                             </a>
                         @else
@@ -129,10 +129,10 @@
                         </div>
                     @else
                         <div class="flex items-center gap-1.5 sm:gap-2">
-                            <a href="{{ route('login') }}" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                            <a href="{{ route('login') }}" class="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
                                 Masuk
                             </a>
-                            <a href="{{ route('register') }}" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-800 rounded-xl shadow-xs transition-colors">
+                            <a href="{{ route('register') }}" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-800 rounded-xl shadow-xs hover:shadow-md transition-all">
                                 Daftar Akun
                             </a>
                         </div>

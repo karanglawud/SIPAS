@@ -219,11 +219,11 @@
 
                 <!-- Live Summary & Submission Button -->
                 <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <a href="{{ route('catalog.index') }}" class="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors w-full sm:w-auto text-center">
+                    <a href="{{ route('catalog.index') }}" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition-colors w-full sm:w-auto text-center">
                         &larr; Kembali ke Katalog
                     </a>
 
-                    <button type="button" id="btnOpenLoanConfirmModal" class="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-800 text-white font-extrabold text-xs rounded-2xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <button type="button" id="btnOpenLoanConfirmModal" class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <span>Kirim Permohonan Peminjaman</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </button>
@@ -298,10 +298,10 @@
 
             <!-- Modal Action Buttons -->
             <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button type="button" id="btnDismissSubmitModal" class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors">
+                <button type="button" id="btnDismissSubmitModal" class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
                     Periksa Kembali
                 </button>
-                <button type="button" id="btnConfirmSubmitLoan" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-800 text-white text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                <button type="button" id="btnConfirmSubmitLoan" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                     <span>Ya, Kirim Sekarang</span>
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>

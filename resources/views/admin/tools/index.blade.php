@@ -28,7 +28,7 @@
             </div>
 
             <div class="flex items-center gap-2.5">
-                <a href="{{ route('admin.tools.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-800 text-white font-bold text-xs shadow-xs transition-all">
+                <a href="{{ route('admin.tools.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-800 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     <span>Tambah Alat Baru</span>
                 </a>
@@ -218,7 +218,7 @@
                             <form action="{{ route('admin.tools.destroy', $tool->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus alat {{ $tool->name }}? Data unit fisik juga akan terhapus.');" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl transition-colors inline-flex items-center gap-1 border border-rose-200">
+                                <button type="submit" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl transition-colors inline-flex items-center gap-1 border border-rose-200">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     <span>Hapus</span>
                                 </button>
@@ -269,7 +269,7 @@
                 </div>
 
                 <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
-                    <button type="button" id="btnCancelAddUnit" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50">
+                    <button type="button" id="btnCancelAddUnit" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50">
                         Batal
                     </button>
                     <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-800 text-white font-bold shadow-xs hover:shadow-md transition-all">

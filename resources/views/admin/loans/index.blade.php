@@ -241,7 +241,7 @@
                                 
                                 <!-- Kirim Pesan Shortcut to borrower -->
                                 <button type="button" 
-                                        class="btn-open-msg-modal px-3.5 py-2 bg-slate-100 hover:bg-blue-50 text-blue-950 border border-slate-300 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                                        class="btn-open-msg-modal px-4 py-2 bg-slate-100 hover:bg-blue-50 text-blue-950 border border-slate-300 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
                                         data-loan-id="{{ $loan->id }}"
                                         data-recipient-name="{{ $loan->user->name }}"
                                         data-ticket="{{ $loan->ticket_number }}"
@@ -255,16 +255,16 @@
                                 @if($loan->status === 'menunggu')
                                     <!-- Reject Action Button -->
                                     <button type="button" 
-                                            class="btn-open-reject-modal px-3.5 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                                            class="btn-open-reject-modal px-4 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl font-bold text-xs transition-colors cursor-pointer shadow-2xs"
                                             data-loan-id="{{ $loan->id }}"
                                             data-ticket="{{ $loan->ticket_number }}"
                                             data-tool="{{ $loan->tool->name }}">
-                                        Tolak Pengajuan
+                                        <span>Tolak Pengajuan</span>
                                     </button>
 
                                     <!-- Advanced Approve Action Button -->
                                     <button type="button" 
-                                            class="btn-open-approve-modal px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                                            class="btn-open-approve-modal px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                                             data-loan-id="{{ $loan->id }}"
                                             data-ticket="{{ $loan->ticket_number }}"
                                             data-tool="{{ $loan->tool->name }}"
@@ -277,7 +277,7 @@
                                 @endif
 
                                 @if($loan->status === 'disetujui')
-                                    <a href="{{ route('admin.loans.print', $loan->id) }}" target="_blank" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1" title="Cetak Surat Bukti Pinjam">
+                                    <a href="{{ route('admin.loans.print', $loan->id) }}" target="_blank" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1.5 shadow-2xs" title="Cetak Surat Bukti Pinjam">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                         <span>Cetak Surat</span>
                                     </a>
@@ -303,19 +303,20 @@
                                             data-overdue-days="{{ $loan->computed_overdue_days }}"
                                             data-computed-fine="{{ $loan->computed_fine }}"
                                             data-end-date="{{ $loan->end_date->translatedFormat('d F Y') }}">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                         <span>Catat Pengembalian</span>
                                     </button>
                                 @endif
 
                                 @if($loan->status === 'dipinjam')
-                                    <a href="{{ route('admin.loans.print', $loan->id) }}" target="_blank" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1" title="Cetak Surat Bukti Pinjam">
+                                    <a href="{{ route('admin.loans.print', $loan->id) }}" target="_blank" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1.5 shadow-2xs" title="Cetak Surat Bukti Pinjam">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                         <span>Cetak Surat</span>
                                     </a>
 
                                     <!-- Complete (Return) Button -->
                                     <button type="button" 
-                                            class="btn-open-return-modal px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                                            class="btn-open-return-modal px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                                             data-loan-id="{{ $loan->id }}"
                                             data-ticket="{{ $loan->ticket_number }}"
                                             data-tool="{{ $loan->tool->name }}"
@@ -331,7 +332,7 @@
                                 @endif
 
                                 @if($loan->status === 'selesai')
-                                    <a href="{{ route('admin.loans.print', $loan->id) }}" target="_blank" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1" title="Cetak Surat Bukti Selesai">
+                                    <a href="{{ route('admin.loans.print', $loan->id) }}" target="_blank" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1.5 shadow-2xs" title="Cetak Surat Bukti Selesai">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                         <span>Cetak Bukti</span>
                                     </a>

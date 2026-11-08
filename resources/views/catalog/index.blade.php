@@ -31,16 +31,16 @@
                         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
                     <input type="text" name="q" id="catalogSearchInput" value="{{ request('q') }}" placeholder="Cari nama alat, kode, atau spesifikasi (Las, Kamera, Multimeter)..." 
-                        class="w-full pl-10 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all">
+                        class="w-full pl-10 sm:pl-11 pr-3 sm:pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all">
                 </div>
 
                 <!-- Submit / Clear Buttons -->
                 <div class="md:col-span-4 flex items-center gap-2">
-                    <button type="submit" class="flex-1 py-2.5 sm:py-3 px-4 bg-blue-600 hover:bg-blue-800 text-white rounded-xl sm:rounded-2xl text-xs font-bold transition-all shadow-xs hover:shadow-md">
+                    <button type="submit" class="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-800 text-white rounded-2xl text-xs font-bold transition-all shadow-xs hover:shadow-md">
                         Cari Alat
                     </button>
                     @if(request('q') || request('category'))
-                        <a href="{{ route('catalog.index') }}" class="py-2.5 sm:py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl sm:rounded-2xl text-xs font-bold transition-colors">
+                        <a href="{{ route('catalog.index') }}" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-colors">
                             Reset
                         </a>
                     @endif
