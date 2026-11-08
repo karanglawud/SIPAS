@@ -8,6 +8,7 @@ use App\Models\ToolUnit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -214,10 +215,19 @@ class AdminToolController extends Controller
             return back()->with('error', 'Alat ini tidak dapat dihapus karena masih ada peminjaman aktif atau menunggu verifikasi.');
         }
 
-        $toolName = $tool->name;
-        $tool->delete();
+        if ($tool->image && Storage::disk('public')->exists($tool->image)) {
+            Storage::disk('public')->delete($tool->image);
+            $tool->update(['image' => null]);
+        }
 
-        return redirect()->route('admin.tools.index')->with('success', 'Alat "'.$toolName.'" beserta unit fisiknya telah berhasil dihapus.');
+        $toolName = $tool->name;
+
+        DB::transaction(function () use ($tool) {
+            $tool->units()->delete();
+            $tool->delete();
+        });
+
+        return redirect()->route('admin.tools.index')->with('success', 'Alat "'.$toolName.'" beserta unit fisiknya telah berhasil dinonaktifkan dari inventaris tanpa merusak riwayat peminjaman lampau.');
     }
 
     public function storeUnit(Request $request, Tool $tool): RedirectResponse
@@ -252,21 +262,40 @@ class AdminToolController extends Controller
     {
         $this->authorizeToolScope($unit->tool);
 
+        if ($unit->status === 'dipinjam') {
+            return back()->with('error', 'Unit fisik '.$unit->unit_code.' sedang dalam status dipinjam oleh peminjam. Status unit tidak dapat diubah secara manual sampai proses pengembalian resmi dicatat oleh admin.');
+        }
+
         $validated = $request->validate([
             'status' => 'required|in:tersedia,rusak,hilang',
             'condition' => 'required|in:baik,rusak ringan,rusak berat',
             'notes' => 'nullable|string|max:255',
         ]);
 
-        $unit->update([
-            'status' => $validated['status'],
-            'condition' => $validated['condition'],
-            'notes' => array_key_exists('notes', $validated) ? $validated['notes'] : $unit->notes,
-        ]);
+        try {
+            DB::transaction(function () use ($unit, $validated) {
+                $lockedUnit = ToolUnit::where('id', $unit->id)->lockForUpdate()->firstOrFail();
 
-        // Recalculate available_stock for the tool
-        $availableCount = $unit->tool->units()->where('status', 'tersedia')->count();
-        $unit->tool->update(['available_stock' => $availableCount]);
+                if ($lockedUnit->status === 'dipinjam') {
+                    throw new \RuntimeException('Unit fisik '.$lockedUnit->unit_code.' sedang dalam status dipinjam dan tidak dapat diubah.');
+                }
+
+                $lockedUnit->update([
+                    'status' => $validated['status'],
+                    'condition' => $validated['condition'],
+                    'notes' => array_key_exists('notes', $validated) ? $validated['notes'] : $lockedUnit->notes,
+                ]);
+
+                // Recalculate available_stock for the tool
+                $availableCount = ToolUnit::where('tool_id', $lockedUnit->tool_id)
+                    ->where('status', 'tersedia')
+                    ->count();
+
+                $lockedUnit->tool->update(['available_stock' => $availableCount]);
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', 'Status unit fisik '.$unit->unit_code.' berhasil diperbarui.');
     }

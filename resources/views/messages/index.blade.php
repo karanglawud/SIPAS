@@ -124,7 +124,7 @@
                                         
                                         <p>{{ $msg->message }}</p>
 
-                                        <!-- Loan Ticket Embed Card if attached -->
+                                        <!-- Loan Embed Card if attached -->
                                         @if($msg->loan)
                                             <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-[11px]">
                                                 <div class="flex items-center justify-between border-b border-slate-200/80 pb-1.5">

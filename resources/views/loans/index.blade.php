@@ -129,6 +129,36 @@
 
                         </div>
 
+                        <!-- Overdue Warning or Final Fine Notice -->
+                        @if($loan->is_overdue)
+                            <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="relative flex h-3 w-3 shrink-0">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
+                                    </span>
+                                    <div>
+                                        <span class="font-extrabold text-rose-800">Keterlambatan: {{ $loan->computed_overdue_days }} Hari Kalender</span>
+                                        <span class="text-rose-600 block text-[11px]">Batas pengembalian adalah {{ $loan->end_date->translatedFormat('d M Y') }}. Harap segera kembalikan alat ke ruang sarana.</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white px-3.5 py-1.5 rounded-xl border border-rose-200 shrink-0 text-left sm:text-right">
+                                    <span class="text-[10px] text-slate-500 block uppercase font-bold">Denda Berjalan:</span>
+                                    <span class="text-rose-700 font-mono font-black text-sm">Rp {{ number_format($loan->computed_fine, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        @elseif($loan->status === 'selesai' && $loan->fine_amount > 0)
+                            <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl text-amber-900 text-xs flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Tercatat denda keterlambatan ({{ $loan->overdue_days }} hari): <strong class="font-mono text-amber-950">Rp {{ number_format($loan->fine_amount, 0, ',', '.') }}</strong></span>
+                                </div>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $loan->fine_status === 'lunas' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300' }}">
+                                    {{ $loan->fine_status === 'lunas' ? 'Denda Lunas' : 'Belum Lunas' }}
+                                </span>
+                            </div>
+                        @endif
+
                         <!-- PJ Notes & Print Action Bar -->
                         <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                             <div class="text-slate-500">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,6 +30,8 @@ class Loan extends Model
         'return_condition',
         'fine_amount',
         'fine_status',
+        'last_reminder_sent_at',
+        'overdue_days',
     ];
 
     protected $casts = [
@@ -36,6 +39,8 @@ class Loan extends Model
         'end_date' => 'date',
         'actual_return_date' => 'date',
         'approved_at' => 'datetime',
+        'last_reminder_sent_at' => 'datetime',
+        'overdue_days' => 'integer',
         'assigned_units' => 'array',
     ];
 
@@ -46,7 +51,7 @@ class Loan extends Model
 
     public function tool()
     {
-        return $this->belongsTo(Tool::class);
+        return $this->belongsTo(Tool::class)->withTrashed();
     }
 
     public function approver()
@@ -57,6 +62,43 @@ class Loan extends Model
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function getLoanNumberAttribute(): string
+    {
+        return $this->ticket_number;
+    }
+
+    public function getIsOverdueAttribute(): bool
+    {
+        if (! in_array($this->status, ['disetujui', 'dipinjam'])) {
+            return false;
+        }
+
+        return Carbon::now()->startOfDay()->gt($this->end_date->startOfDay());
+    }
+
+    public function getComputedOverdueDaysAttribute(): int
+    {
+        if (! $this->is_overdue) {
+            return 0;
+        }
+
+        return abs((int) Carbon::now()->startOfDay()->diffInDays($this->end_date->startOfDay()));
+    }
+
+    public function getComputedFineAttribute(): int
+    {
+        if ($this->status === 'selesai') {
+            return (int) $this->fine_amount;
+        }
+
+        $days = $this->computed_overdue_days;
+        if ($days <= 0 || ! $this->tool) {
+            return 0;
+        }
+
+        return $days * (int) $this->tool->fine_per_day * (int) $this->quantity;
     }
 
     public function getStatusBadgeAttribute(): string

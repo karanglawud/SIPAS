@@ -103,14 +103,14 @@
             <div class="space-y-4">
                 @foreach($loans as $loan)
                     @php
-                        $isOverdue = in_array($loan->status, ['disetujui', 'dipinjam']) && now()->gt($loan->end_date);
+                        $isOverdue = $loan->is_overdue;
                         $availableUnits = $loan->tool->availableUnits;
                     @endphp
                     <div class="bg-white rounded-3xl border {{ $isOverdue ? 'border-rose-400 shadow-sm shadow-rose-100' : 'border-slate-200' }} p-6 shadow-xs hover:border-blue-300 transition-all space-y-4">
                         
                         <!-- Top Info Bar -->
                         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-3 flex-wrap">
                                 <span class="text-sm font-mono font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-xl">
                                     {{ $loan->ticket_number }}
                                 </span>
@@ -120,7 +120,11 @@
                                 </span>
                                 @if($isOverdue)
                                     <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
-                                        Terlambat Kembali
+                                        Terlambat {{ $loan->computed_overdue_days }} Hari • Denda Berjalan: Rp {{ number_format($loan->computed_fine, 0, ',', '.') }}
+                                    </span>
+                                @elseif($loan->status === 'selesai' && $loan->fine_amount > 0)
+                                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $loan->fine_status === 'lunas' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300' }}">
+                                        Denda: Rp {{ number_format($loan->fine_amount, 0, ',', '.') }} ({{ $loan->fine_status === 'lunas' ? 'LUNAS' : 'BELUM LUNAS' }})
                                     </span>
                                 @endif
                             </div>
@@ -273,7 +277,6 @@
                                 @endif
 
                                 @if($loan->status === 'disetujui')
-                                    <!-- Print Ticket -->
                                     <a href="{{ route('admin.loans.print', $loan->id) }}" target="_blank" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors inline-flex items-center gap-1" title="Cetak Surat Bukti Pinjam">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                         <span>Cetak Surat</span>
@@ -297,7 +300,9 @@
                                             data-quantity="{{ $loan->quantity }}"
                                             data-fine-per-day="{{ $loan->tool->fine_per_day }}"
                                             data-is-overdue="{{ $isOverdue ? '1' : '0' }}"
-                                            data-end-date="{{ $loan->end_date->format('Y-m-d') }}">
+                                            data-overdue-days="{{ $loan->computed_overdue_days }}"
+                                            data-computed-fine="{{ $loan->computed_fine }}"
+                                            data-end-date="{{ $loan->end_date->translatedFormat('d F Y') }}">
                                         <span>Catat Pengembalian</span>
                                     </button>
                                 @endif
@@ -317,7 +322,9 @@
                                             data-quantity="{{ $loan->quantity }}"
                                             data-fine-per-day="{{ $loan->tool->fine_per_day }}"
                                             data-is-overdue="{{ $isOverdue ? '1' : '0' }}"
-                                            data-end-date="{{ $loan->end_date->format('Y-m-d') }}">
+                                            data-overdue-days="{{ $loan->computed_overdue_days }}"
+                                            data-computed-fine="{{ $loan->computed_fine }}"
+                                            data-end-date="{{ $loan->end_date->translatedFormat('d F Y') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                         <span>Catat Pengembalian</span>
                                     </button>
@@ -454,41 +461,62 @@
                 <button type="button" class="btn-dismiss-modal text-slate-400 hover:text-slate-700 font-bold">&times;</button>
             </div>
 
-            <form id="returnForm" method="POST" action="" class="space-y-3.5 text-xs">
+            <form id="returnForm" method="POST" action="" class="space-y-4 text-xs">
                 @csrf
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-1">
-                        <label class="block font-bold text-slate-700">Kondisi Fisik Saat Kembali: <span class="text-rose-500">*</span></label>
-                        <select name="return_condition" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="baik">Kondisi Baik & Bersih</option>
-                            <option value="rusak">Kondisi Rusak / Perlu Perbaikan</option>
-                            <option value="hilang">Hilang / Tidak Kembali</option>
-                        </select>
+                <!-- Overdue Fine Pre-Calculation Box -->
+                <div id="returnOverdueCard" class="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs space-y-2.5 hidden">
+                    <div class="flex items-center justify-between border-b border-rose-200/80 pb-2">
+                        <span class="font-bold text-rose-800 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Keterlambatan Pengembalian</span>
+                        </span>
+                        <span id="returnOverdueDaysBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-200 text-rose-900"></span>
                     </div>
-
-                    <div class="space-y-1">
-                        <label class="block font-bold text-slate-700">Status Pembayaran Denda:</label>
-                        <select name="fine_status" id="returnFineStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="none">Tidak Ada Denda</option>
-                            <option value="lunas">Denda Lunas di Tempat</option>
-                            <option value="belum_lunas">Belum Lunas (Tercatat)</option>
-                        </select>
+                    <div class="space-y-1.5 text-slate-700 text-[11px]">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Tenggat Pengembalian:</span>
+                            <strong id="returnDueDate" class="text-slate-900"></strong>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Kalkulasi Otomatis:</span>
+                            <span id="returnFineBreakdown" class="font-mono text-slate-800"></span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1.5 border-t border-rose-200/60 font-bold text-xs">
+                            <span class="text-rose-900">Total Denda Terhitung:</span>
+                            <span id="returnFineTotal" class="font-mono text-rose-700 text-sm font-black"></span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Overdue Notice Banner if Late -->
-                <div id="returnOverdueNotice" class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 text-xs hidden space-y-1">
-                    <span class="font-bold flex items-center gap-1.5 text-rose-700">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>Peminjaman Ini Melewati Batas Waktu Pengembalian!</span>
-                    </span>
-                    <p class="text-[11px] text-rose-700" id="returnOverdueCalculation"></p>
+                <!-- On-Time Notice Box -->
+                <div id="returnOnTimeCard" class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Pengembalian tepat waktu sebelum batas tenggat. Bebas denda keterlambatan (Rp 0).</span>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="block font-bold text-slate-700">Catatan Kondisi / Berita Acara Pengembalian:</label>
-                    <textarea name="return_notes" rows="2" placeholder="Contoh: Alat dikembalikan lengkap dengan kabel dan kotak penyimpan..." 
+                    <label class="block font-bold text-slate-700">Pemeriksaan Fisik Unit Saat Kembali: <span class="text-rose-500">*</span></label>
+                    <select name="return_condition" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="baik">Kondisi Baik & Lengkap (Stok otomatis dipulihkan ke Tersedia)</option>
+                        <option value="rusak">Kondisi Rusak (Unit masuk perawatan, stok tidak dipulihkan)</option>
+                        <option value="hilang">Hilang / Tidak Kembali (Unit dicatat hilang, stok tidak dipulihkan)</option>
+                    </select>
+                </div>
+
+                <!-- Fine Status (Only active if overdue) -->
+                <div id="fineStatusContainer" class="space-y-1 hidden">
+                    <label class="block font-bold text-slate-700">Status Pembayaran Denda: <span class="text-rose-500">*</span></label>
+                    <select name="fine_status" id="returnFineStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="belum_lunas">Belum Lunas (Tercatat sebagai Tanggungan Peminjam)</option>
+                        <option value="lunas">Lunas di Tempat (Denda telah diselesaikan langsung)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-500">Nominal denda dihitung otomatis oleh sistem dan akan tersimpan di riwayat peminjam.</p>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block font-bold text-slate-700">Catatan Berita Acara Pengembalian (Opsional):</label>
+                    <textarea name="return_notes" rows="2" placeholder="Contoh: Alat dan seluruh kelengkapan dicek lengkap oleh petugas PJ..." 
                         class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
                 </div>
 
@@ -655,8 +683,13 @@
         const returnModal = document.getElementById('returnModal');
         const returnForm = document.getElementById('returnForm');
         const returnSubtitle = document.getElementById('returnModalSubtitle');
-        const returnOverdueNotice = document.getElementById('returnOverdueNotice');
-        const returnOverdueCalculation = document.getElementById('returnOverdueCalculation');
+        const returnOverdueCard = document.getElementById('returnOverdueCard');
+        const returnOnTimeCard = document.getElementById('returnOnTimeCard');
+        const returnOverdueDaysBadge = document.getElementById('returnOverdueDaysBadge');
+        const returnDueDate = document.getElementById('returnDueDate');
+        const returnFineBreakdown = document.getElementById('returnFineBreakdown');
+        const returnFineTotal = document.getElementById('returnFineTotal');
+        const fineStatusContainer = document.getElementById('fineStatusContainer');
         const returnFineStatus = document.getElementById('returnFineStatus');
 
         document.querySelectorAll('.btn-open-return-modal').forEach(btn => {
@@ -665,18 +698,29 @@
                 const ticket = btn.getAttribute('data-ticket');
                 const tool = btn.getAttribute('data-tool');
                 const isOverdue = btn.getAttribute('data-is-overdue') === '1';
+                const overdueDays = parseInt(btn.getAttribute('data-overdue-days'), 10) || 0;
+                const computedFine = parseInt(btn.getAttribute('data-computed-fine'), 10) || 0;
                 const finePerDay = parseInt(btn.getAttribute('data-fine-per-day'), 10) || 0;
                 const quantity = parseInt(btn.getAttribute('data-quantity'), 10) || 1;
+                const endDate = btn.getAttribute('data-end-date');
 
-                returnSubtitle.textContent = `No. ${ticket} • ${tool} (${quantity} Unit)`;
+                returnSubtitle.textContent = `No. Peminjaman: ${ticket} • ${tool} (${quantity} Unit)`;
                 returnForm.setAttribute('action', `/admin/peminjaman/${loanId}/complete`);
 
-                if (isOverdue) {
-                    returnOverdueNotice.classList.remove('hidden');
-                    returnOverdueCalculation.textContent = `Tarif denda: Rp ${finePerDay.toLocaleString('id-ID')} / unit / hari keterlambatan. Sistem akan menghitung akumulasi total secara otomatis.`;
+                if (isOverdue && overdueDays > 0) {
+                    returnOverdueCard.classList.remove('hidden');
+                    returnOnTimeCard.classList.add('hidden');
+                    fineStatusContainer.classList.remove('hidden');
+
+                    returnOverdueDaysBadge.textContent = `Telat ${overdueDays} Hari`;
+                    returnDueDate.textContent = endDate;
+                    returnFineBreakdown.textContent = `${overdueDays} hari × Rp ${finePerDay.toLocaleString('id-ID')} × ${quantity} unit`;
+                    returnFineTotal.textContent = `Rp ${computedFine.toLocaleString('id-ID')}`;
                     returnFineStatus.value = 'belum_lunas';
                 } else {
-                    returnOverdueNotice.classList.add('hidden');
+                    returnOverdueCard.classList.add('hidden');
+                    returnOnTimeCard.classList.remove('hidden');
+                    fineStatusContainer.classList.add('hidden');
                     returnFineStatus.value = 'none';
                 }
 

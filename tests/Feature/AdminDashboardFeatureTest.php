@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Models\Tool;
 use App\Models\ToolUnit;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -309,7 +310,7 @@ class AdminDashboardFeatureTest extends TestCase
 
         $response->assertRedirect(route('admin.tools.index'));
         $response->assertSessionHas('success');
-        $this->assertDatabaseMissing('tools', ['id' => $data['tool']->id]);
+        $this->assertSoftDeleted('tools', ['id' => $data['tool']->id]);
     }
 
     public function test_admin_can_delete_available_unit(): void
@@ -1025,5 +1026,142 @@ class AdminDashboardFeatureTest extends TestCase
         $loan->refresh();
         $this->assertEquals('menunggu', $loan->status);
         $this->assertEquals(1, $data['tool']->fresh()->available_stock);
+    }
+
+    public function test_admin_cannot_update_unit_when_status_is_dipinjam(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 1);
+        $unit = $data['units'][0];
+        $unit->update(['status' => 'dipinjam']);
+
+        $response = $this->actingAs($admin)->patch(route('admin.tools.units.update', $unit->id), [
+            'status' => 'tersedia',
+            'condition' => 'baik',
+        ]);
+
+        $response->assertSessionHas('error');
+        $unit->refresh();
+        $this->assertEquals('dipinjam', $unit->status);
+    }
+
+    public function test_deleting_tool_with_completed_loans_preserves_loan_history(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 1);
+        $borrower = $this->createBorrower();
+
+        $loan = $this->createLoan($borrower, $data['tool'], 'selesai', [
+            'fine_amount' => 15000,
+            'fine_status' => 'lunas',
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('admin.tools.destroy', $data['tool']->id));
+        $response->assertSessionHas('success');
+
+        $this->assertSoftDeleted('tools', ['id' => $data['tool']->id]);
+        $this->assertDatabaseHas('loans', [
+            'id' => $loan->id,
+            'fine_amount' => 15000,
+            'fine_status' => 'lunas',
+        ]);
+
+        // Tool relation still loads via withTrashed()
+        $loanFresh = Loan::with('tool')->find($loan->id);
+        $this->assertNotNull($loanFresh->tool);
+        $this->assertEquals($data['tool']->name, $loanFresh->tool->name);
+    }
+
+    public function test_deleting_tool_cleans_up_image_from_storage(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 1);
+
+        $file = UploadedFile::fake()->image('test-tool.jpg');
+        $storedPath = $file->store('images/unit', 'public');
+        $data['tool']->update(['image' => $storedPath]);
+
+        Storage::disk('public')->assertExists($storedPath);
+
+        $this->actingAs($admin)->delete(route('admin.tools.destroy', $data['tool']->id));
+
+        Storage::disk('public')->assertMissing($storedPath);
+    }
+
+    public function test_process_overdue_loans_command_calculates_fines_and_sends_warning_message(): void
+    {
+        $category = $this->createCategory();
+        $admin = $this->createAdmin();
+        $category->admins()->attach($admin);
+
+        $data = $this->createToolWithUnits($category, 1);
+        $data['tool']->update(['fine_per_day' => 5000]);
+
+        $borrower = $this->createBorrower();
+
+        $overdueLoan = $this->createLoan($borrower, $data['tool'], 'dipinjam', [
+            'quantity' => 2,
+            'start_date' => Carbon::now()->subDays(5)->format('Y-m-d'),
+            'end_date' => Carbon::now()->subDays(2)->format('Y-m-d'), // 2 days overdue
+            'duration_days' => 3,
+        ]);
+
+        $this->artisan('loans:process-overdue')
+            ->assertExitCode(0);
+
+        $overdueLoan->refresh();
+        $this->assertEquals(2, $overdueLoan->overdue_days);
+        $this->assertEquals(20000, $overdueLoan->fine_amount); // 2 days * 5000 * 2 qty = 20000
+        $this->assertEquals('belum_lunas', $overdueLoan->fine_status);
+        $this->assertNotNull($overdueLoan->last_reminder_sent_at);
+
+        // Verify reminder message was created
+        $this->assertDatabaseHas('messages', [
+            'recipient_id' => $borrower->id,
+            'loan_id' => $overdueLoan->id,
+            'type' => 'warning',
+        ]);
+    }
+
+    public function test_complete_overdue_loan_automatically_calculates_fine_and_sets_status(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $category->admins()->attach($admin);
+
+        $data = $this->createToolWithUnits($category, 1);
+        $data['tool']->update(['fine_per_day' => 3000]);
+        $unit = $data['units'][0];
+        $unit->update(['status' => 'dipinjam']);
+
+        $borrower = $this->createBorrower();
+        $loan = $this->createLoan($borrower, $data['tool'], 'dipinjam', [
+            'quantity' => 1,
+            'assigned_units' => [$unit->unit_code],
+            'start_date' => Carbon::now()->subDays(4)->format('Y-m-d'),
+            'end_date' => Carbon::now()->subDays(1)->format('Y-m-d'), // 1 day overdue
+            'duration_days' => 3,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.loans.complete', $loan->id), [
+            'return_condition' => 'baik',
+            'fine_status' => 'lunas',
+            'return_notes' => 'Dikembalikan terlambat 1 hari',
+        ]);
+
+        $response->assertSessionHas('success');
+        $loan->refresh();
+        $this->assertEquals('selesai', $loan->status);
+        $this->assertEquals(1, $loan->overdue_days);
+        $this->assertEquals(3000, $loan->fine_amount);
+        $this->assertEquals('lunas', $loan->fine_status);
+
+        $unit->refresh();
+        $this->assertEquals('tersedia', $unit->status);
     }
 }

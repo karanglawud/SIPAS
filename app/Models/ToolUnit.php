@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ToolUnit extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'tool_id',
@@ -19,6 +20,6 @@ class ToolUnit extends Model
 
     public function tool()
     {
-        return $this->belongsTo(Tool::class);
+        return $this->belongsTo(Tool::class)->withTrashed();
     }
 }

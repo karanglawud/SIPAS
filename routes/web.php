@@ -31,7 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/riwayat', [LoanController::class, 'index'])->name('loans.index');
     Route::get('/riwayat/cetak', [LoanController::class, 'printHistory'])->name('loans.history.print');
     Route::post('/riwayat/{loan}/batalkan', [LoanController::class, 'cancel'])->name('loans.cancel');
-    Route::get('/tiket/{loan}/cetak', [LoanController::class, 'printTicket'])->name('loans.print');
+    Route::get('/bukti-pinjam/{loan}/cetak', [LoanController::class, 'printTicket'])->name('loans.print');
 
     // WhatsApp-style Notification Inbox
     Route::get('/pesan', [MessageController::class, 'index'])->name('messages.index');

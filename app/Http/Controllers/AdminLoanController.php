@@ -250,47 +250,54 @@ class AdminLoanController extends Controller
     {
         $this->authorizeLoanScope($loan);
 
-        if ($loan->status !== 'dipinjam') {
-            return back()->with('error', 'Hanya peminjaman dengan status Sedang Dipinjam yang dapat diselesaikan.');
+        if (! in_array($loan->status, ['dipinjam', 'disetujui'])) {
+            return back()->with('error', 'Hanya peminjaman dengan status Sedang Dipinjam atau Disetujui yang dapat diselesaikan.');
         }
 
         $request->validate([
             'return_condition' => 'required|in:baik,rusak,hilang',
-            'fine_status' => 'required|in:none,belum_lunas,lunas',
+            'fine_status' => 'nullable|in:none,belum_lunas,lunas',
             'return_notes' => 'nullable|string|max:500',
         ]);
 
         $condition = $request->input('return_condition');
-        $fineStatus = $request->input('fine_status');
         $returnDate = Carbon::now();
         $notesInput = $request->input('return_notes', 'Pengembalian tercatat dengan kondisi: '.strtoupper($condition));
 
         $fineAmount = 0;
+        $overdueDays = 0;
+        $fineStatus = 'none';
         $tool = $loan->tool;
 
         try {
-            DB::transaction(function () use ($loan, $condition, &$fineStatus, &$fineAmount, &$tool, $returnDate, $notesInput) {
+            DB::transaction(function () use ($loan, $condition, $request, &$fineStatus, &$fineAmount, &$overdueDays, &$tool, $returnDate, $notesInput) {
                 $lockedLoan = Loan::where('id', $loan->id)->lockForUpdate()->firstOrFail();
-                if ($lockedLoan->status !== 'dipinjam') {
-                    throw new \RuntimeException('Hanya peminjaman dengan status Sedang Dipinjam yang dapat diselesaikan.');
+                if (! in_array($lockedLoan->status, ['dipinjam', 'disetujui'])) {
+                    throw new \RuntimeException('Hanya peminjaman dengan status Sedang Dipinjam atau Disetujui yang dapat diselesaikan.');
                 }
 
-                $tool = Tool::where('id', $lockedLoan->tool_id)->lockForUpdate()->firstOrFail();
+                $tool = Tool::withTrashed()->where('id', $lockedLoan->tool_id)->lockForUpdate()->firstOrFail();
 
-                if ($returnDate->gt($lockedLoan->end_date)) {
-                    $diffDays = $returnDate->diffInDays($lockedLoan->end_date);
-                    if ($diffDays > 0) {
-                        $fineAmount = $diffDays * $tool->fine_per_day * $lockedLoan->quantity;
+                // Hitung denda otomatis secara pasti berdasarkan tanggal hari ini vs tanggal batas pengembalian
+                if ($returnDate->startOfDay()->gt($lockedLoan->end_date->startOfDay())) {
+                    $overdueDays = abs((int) $returnDate->startOfDay()->diffInDays($lockedLoan->end_date->startOfDay()));
+                    if ($overdueDays > 0) {
+                        $fineAmount = $overdueDays * (int) $tool->fine_per_day * (int) $lockedLoan->quantity;
                     }
                 }
 
-                if ($fineAmount === 0) {
+                if ($fineAmount > 0) {
+                    $fineStatus = $request->input('fine_status', 'belum_lunas');
+                    if (! in_array($fineStatus, ['belum_lunas', 'lunas'])) {
+                        $fineStatus = 'belum_lunas';
+                    }
+                } else {
                     $fineStatus = 'none';
                 }
 
                 if (! empty($lockedLoan->assigned_units)) {
                     foreach ($lockedLoan->assigned_units as $unitCode) {
-                        $unit = ToolUnit::where('unit_code', $unitCode)->lockForUpdate()->first();
+                        $unit = ToolUnit::withTrashed()->where('unit_code', $unitCode)->lockForUpdate()->first();
                         if ($unit) {
                             $newStatus = ($condition === 'baik') ? 'tersedia' : (($condition === 'rusak') ? 'rusak' : 'hilang');
                             $unit->update([
@@ -307,7 +314,7 @@ class AdminLoanController extends Controller
 
                 $notes = $notesInput;
                 if ($fineAmount > 0) {
-                    $notes .= ' (Terlambat, denda: Rp '.number_format($fineAmount, 0, ',', '.').' - Status: '.strtoupper($fineStatus).')';
+                    $notes .= ' (Terlambat '.$overdueDays.' hari, denda: Rp '.number_format($fineAmount, 0, ',', '.').' - Status: '.strtoupper($fineStatus).')';
                 }
 
                 $lockedLoan->update([
@@ -315,6 +322,7 @@ class AdminLoanController extends Controller
                     'actual_return_date' => $returnDate->format('Y-m-d'),
                     'return_condition' => $condition,
                     'fine_amount' => $fineAmount,
+                    'overdue_days' => $overdueDays,
                     'fine_status' => $fineStatus,
                     'pj_notes' => $lockedLoan->pj_notes.' | Pengembalian: '.$notes,
                 ]);
@@ -327,7 +335,7 @@ class AdminLoanController extends Controller
 
         $msgText = 'Pengembalian alat untuk No. Peminjaman '.$loan->ticket_number.' telah diterima oleh '.Auth::user()->name.' dengan kondisi fisik: '.strtoupper($condition).'.';
         if ($fineAmount > 0) {
-            $msgText .= ' Terdapat denda keterlambatan sebesar Rp '.number_format($fineAmount, 0, ',', '.').' (Status denda: '.strtoupper($fineStatus).').';
+            $msgText .= ' Denda keterlambatan ('.$overdueDays.' hari): Rp '.number_format($fineAmount, 0, ',', '.').' (Status denda: '.strtoupper($fineStatus).').';
         }
 
         Message::create([
@@ -340,7 +348,7 @@ class AdminLoanController extends Controller
             'is_read' => false,
         ]);
 
-        return back()->with('success', 'Pengembalian alat No. '.$loan->ticket_number.' berhasil diproses.');
+        return back()->with('success', 'Pengembalian alat No. '.$loan->ticket_number.' berhasil diproses.'.($fineAmount > 0 ? ' Denda: Rp '.number_format($fineAmount, 0, ',', '.') : ''));
     }
 
     public function printTicket(Loan $loan): View
