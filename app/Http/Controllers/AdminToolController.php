@@ -13,15 +13,6 @@ use Illuminate\View\View;
 
 class AdminToolController extends Controller
 {
-    private function checkAdmin(): ?RedirectResponse
-    {
-        if (! Auth::check() || ! Auth::user()->isAdmin()) {
-            return redirect()->route('login');
-        }
-
-        return null;
-    }
-
     private function getAvailableCategories()
     {
         $admin = Auth::user();
@@ -32,12 +23,16 @@ class AdminToolController extends Controller
         return Category::all();
     }
 
-    public function index(Request $request): View|RedirectResponse
+    private function authorizeToolScope(Tool $tool): void
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
+        $categories = $this->getAvailableCategories();
+        if (! $categories->contains('id', $tool->category_id)) {
+            abort(403, 'Anda tidak memiliki hak akses mengelola alat pada kategori ini.');
         }
+    }
 
+    public function index(Request $request): View
+    {
         $admin = Auth::user();
         $categories = $this->getAvailableCategories();
         $categoryIds = $categories->pluck('id');
@@ -79,12 +74,8 @@ class AdminToolController extends Controller
         ));
     }
 
-    public function create(): View|RedirectResponse
+    public function create(): View
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
-
         $categories = $this->getAvailableCategories();
 
         return view('admin.tools.create', compact('categories'));
@@ -92,10 +83,6 @@ class AdminToolController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
-
         $categories = $this->getAvailableCategories();
         $allowedCatIds = $categories->pluck('id')->toArray();
 
@@ -156,17 +143,11 @@ class AdminToolController extends Controller
         return redirect()->route('admin.tools.index')->with('success', 'Alat praktik baru "'.$tool->name.'" berhasil ditambahkan beserta '.$validated['total_stock'].' unit fisik.');
     }
 
-    public function edit(Tool $tool): View|RedirectResponse
+    public function edit(Tool $tool): View
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeToolScope($tool);
 
         $categories = $this->getAvailableCategories();
-        if (! $categories->contains('id', $tool->category_id)) {
-            abort(403, 'Anda tidak memiliki hak akses mengelola alat pada kategori ini.');
-        }
-
         $tool->load('units');
 
         return view('admin.tools.edit', compact('tool', 'categories'));
@@ -174,14 +155,7 @@ class AdminToolController extends Controller
 
     public function update(Request $request, Tool $tool): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
-
-        $categories = $this->getAvailableCategories();
-        if (! $categories->contains('id', $tool->category_id)) {
-            abort(403, 'Anda tidak memiliki hak akses mengelola alat ini.');
-        }
+        $this->authorizeToolScope($tool);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -233,13 +207,11 @@ class AdminToolController extends Controller
 
     public function destroy(Tool $tool): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeToolScope($tool);
 
         $hasActiveLoans = $tool->loans()->whereIn('status', ['menunggu', 'disetujui', 'dipinjam'])->exists();
         if ($hasActiveLoans) {
-            return back()->with('error', 'Alat ini tidak dapat dihapus karena masih ada tiket peminjaman aktif atau menunggu verifikasi.');
+            return back()->with('error', 'Alat ini tidak dapat dihapus karena masih ada peminjaman aktif atau menunggu verifikasi.');
         }
 
         $toolName = $tool->name;
@@ -250,9 +222,7 @@ class AdminToolController extends Controller
 
     public function storeUnit(Request $request, Tool $tool): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeToolScope($tool);
 
         $validated = $request->validate([
             'unit_code' => 'nullable|string|max:50|unique:tool_units,unit_code',
@@ -280,9 +250,7 @@ class AdminToolController extends Controller
 
     public function updateUnit(Request $request, ToolUnit $unit): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeToolScope($unit->tool);
 
         $validated = $request->validate([
             'status' => 'required|in:tersedia,rusak,hilang',
@@ -290,7 +258,6 @@ class AdminToolController extends Controller
             'notes' => 'nullable|string|max:255',
         ]);
 
-        $oldStatus = $unit->status;
         $unit->update([
             'status' => $validated['status'],
             'condition' => $validated['condition'],
@@ -306,9 +273,7 @@ class AdminToolController extends Controller
 
     public function destroyUnit(ToolUnit $unit): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeToolScope($unit->tool);
 
         if ($unit->status === 'dipinjam') {
             return back()->with('error', 'Unit sedang dipinjam dan tidak dapat dihapus.');

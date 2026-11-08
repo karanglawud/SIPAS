@@ -13,21 +13,8 @@ use Illuminate\View\View;
 
 class AdminMessageController extends Controller
 {
-    private function checkAdmin(): ?RedirectResponse
+    public function index(Request $request): View
     {
-        if (! Auth::check() || ! Auth::user()->isAdmin()) {
-            return redirect()->route('login');
-        }
-
-        return null;
-    }
-
-    public function index(Request $request): View|RedirectResponse
-    {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
-
         $admin = Auth::user();
 
         $category = null;
@@ -79,10 +66,6 @@ class AdminMessageController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
-
         $admin = Auth::user();
 
         $validated = $request->validate([
@@ -101,6 +84,10 @@ class AdminMessageController extends Controller
             $category = Category::find($validated['category_id']);
         } elseif ($admin->category_scope && $admin->category_scope !== 'all') {
             $category = Category::where('slug', $admin->category_scope)->first();
+        }
+
+        if ($category && ! $admin->canManageCategory($category->slug)) {
+            abort(403, 'Anda tidak memiliki hak akses mengirim pesan untuk kategori ini.');
         }
 
         $recipient = User::findOrFail($validated['recipient_id']);

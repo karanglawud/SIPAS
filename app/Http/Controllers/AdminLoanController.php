@@ -4,30 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\Loan;
 use App\Models\Message;
+use App\Models\Tool;
 use App\Models\ToolUnit;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AdminLoanController extends Controller
 {
-    private function checkAdmin(): ?RedirectResponse
+    private function authorizeLoanScope(Loan $loan): void
     {
-        if (! Auth::check() || ! Auth::user()->isAdmin()) {
-            return redirect()->route('login');
+        $loan->loadMissing('tool.category');
+        if (! Auth::user()->canManageCategory($loan->tool->category->slug)) {
+            abort(403, 'Anda tidak memiliki hak akses mengelola permohonan pada kategori ini.');
         }
-
-        return null;
     }
 
-    public function index(Request $request): View|RedirectResponse
+    public function index(Request $request): View
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
-
         $admin = Auth::user();
         $query = Loan::with(['user', 'tool.category', 'tool.availableUnits', 'approver'])->latest();
 
@@ -87,72 +84,96 @@ class AdminLoanController extends Controller
 
     public function approve(Request $request, Loan $loan): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
+        $this->authorizeLoanScope($loan);
+
+        if ($loan->status !== 'menunggu') {
+            return back()->with('error', 'Hanya permohonan dengan status Menunggu yang dapat disetujui.');
         }
-
-        $tool = $loan->tool;
-        $quantity = $loan->quantity;
-
-        // Custom selected unit codes or auto-assignment
-        $assignedCodes = [];
-        $selectedUnitCodes = $request->input('unit_codes', []);
-
-        if (is_array($selectedUnitCodes) && count($selectedUnitCodes) > 0) {
-            if (count($selectedUnitCodes) !== $quantity) {
-                return back()->with('error', 'Jumlah unit fisik yang dipilih ('.count($selectedUnitCodes).') harus sama persis dengan kuantitas permohonan ('.$quantity.' unit).');
-            }
-
-            $units = ToolUnit::where('tool_id', $tool->id)
-                ->whereIn('unit_code', $selectedUnitCodes)
-                ->where('status', 'tersedia')
-                ->get();
-
-            if ($units->count() !== $quantity) {
-                return back()->with('error', 'Beberapa unit fisik yang dipilih sudah tidak tersedia atau tidak valid.');
-            }
-
-            foreach ($units as $unit) {
-                $unit->update(['status' => 'dipinjam']);
-                $assignedCodes[] = $unit->unit_code;
-            }
-        } else {
-            // Auto assign first available units
-            $availableUnits = ToolUnit::where('tool_id', $tool->id)
-                ->where('status', 'tersedia')
-                ->limit($quantity)
-                ->get();
-
-            if ($availableUnits->count() < $quantity) {
-                return back()->with('error', 'Gagal menyetujui: Unit alat tersedia ('.$availableUnits->count().') tidak mencukupi permintaan ('.$quantity.').');
-            }
-
-            foreach ($availableUnits as $unit) {
-                $unit->update(['status' => 'dipinjam']);
-                $assignedCodes[] = $unit->unit_code;
-            }
-        }
-
-        $tool->decrement('available_stock', $quantity);
 
         $pickupNotes = $request->input('pj_notes', 'Disetujui oleh '.Auth::user()->name.'. Harap cek kondisi fisik sebelum meninggalkan ruang sarana.');
+        $sendNotification = $request->boolean('send_notification', true);
+        $selectedUnitCodes = $request->input('unit_codes', []);
+        $adminId = Auth::id();
 
-        $loan->update([
-            'status' => 'disetujui',
-            'assigned_units' => $assignedCodes,
-            'approved_by' => Auth::id(),
-            'approved_at' => Carbon::now(),
-            'pj_notes' => $pickupNotes,
-        ]);
+        try {
+            $assignedCodes = DB::transaction(function () use ($loan, $selectedUnitCodes, $pickupNotes, $adminId) {
+                $lockedLoan = Loan::where('id', $loan->id)->lockForUpdate()->firstOrFail();
+                if ($lockedLoan->status !== 'menunggu') {
+                    throw new \RuntimeException('Permohonan tidak dapat disetujui karena status saat ini: '.$lockedLoan->status_label);
+                }
 
-        if ($request->boolean('send_notification', true)) {
+                $tool = Tool::where('id', $lockedLoan->tool_id)->lockForUpdate()->firstOrFail();
+                $quantity = $lockedLoan->quantity;
+
+                if ($tool->available_stock < $quantity) {
+                    throw new \RuntimeException('Gagal menyetujui: Stok alat tersedia ('.$tool->available_stock.') tidak mencukupi permintaan ('.$quantity.' unit).');
+                }
+
+                $assignedCodes = [];
+
+                if (is_array($selectedUnitCodes) && count($selectedUnitCodes) > 0) {
+                    if (count($selectedUnitCodes) !== $quantity) {
+                        throw new \RuntimeException('Jumlah unit fisik yang dipilih ('.count($selectedUnitCodes).') harus sama persis dengan kuantitas permohonan ('.$quantity.' unit).');
+                    }
+
+                    $units = ToolUnit::where('tool_id', $tool->id)
+                        ->whereIn('unit_code', $selectedUnitCodes)
+                        ->where('status', 'tersedia')
+                        ->lockForUpdate()
+                        ->get();
+
+                    if ($units->count() !== $quantity) {
+                        throw new \RuntimeException('Beberapa unit fisik yang dipilih sudah tidak tersedia atau tidak valid.');
+                    }
+
+                    foreach ($units as $unit) {
+                        $unit->update(['status' => 'dipinjam']);
+                        $assignedCodes[] = $unit->unit_code;
+                    }
+                } else {
+                    $availableUnits = ToolUnit::where('tool_id', $tool->id)
+                        ->where('status', 'tersedia')
+                        ->lockForUpdate()
+                        ->limit($quantity)
+                        ->get();
+
+                    if ($availableUnits->count() < $quantity) {
+                        throw new \RuntimeException('Gagal menyetujui: Unit alat tersedia ('.$availableUnits->count().') tidak mencukupi permintaan ('.$quantity.').');
+                    }
+
+                    foreach ($availableUnits as $unit) {
+                        $unit->update(['status' => 'dipinjam']);
+                        $assignedCodes[] = $unit->unit_code;
+                    }
+                }
+
+                $tool->decrement('available_stock', $quantity);
+
+                $lockedLoan->update([
+                    'status' => 'disetujui',
+                    'assigned_units' => $assignedCodes,
+                    'approved_by' => $adminId,
+                    'approved_at' => Carbon::now(),
+                    'pj_notes' => $pickupNotes,
+                ]);
+
+                return $assignedCodes;
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        $loan->refresh();
+        $tool = $loan->tool;
+
+        if ($sendNotification) {
             Message::create([
-                'sender_id' => Auth::id(),
+                'sender_id' => $adminId,
                 'recipient_id' => $loan->user_id,
                 'category_id' => $tool->category_id,
                 'loan_id' => $loan->id,
                 'type' => 'approval',
-                'message' => 'Permohonan peminjaman No. Tiket '.$loan->ticket_number.' telah DISETUJUI. Kode unit fisik yang dialokasikan: '.implode(', ', $assignedCodes).'. Catatan Pengambilan: '.$pickupNotes.' (Lokasi: '.$tool->location.').',
+                'message' => 'Permohonan peminjaman No. Peminjaman '.$loan->ticket_number.' telah DISETUJUI. Kode unit fisik yang dialokasikan: '.implode(', ', $assignedCodes).'. Catatan Pengambilan: '.$pickupNotes.' (Lokasi: '.$tool->location.').',
                 'is_read' => false,
             ]);
         }
@@ -162,9 +183,7 @@ class AdminLoanController extends Controller
 
     public function handover(Request $request, Loan $loan): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeLoanScope($loan);
 
         if ($loan->status !== 'disetujui') {
             return back()->with('error', 'Serah terima alat hanya dapat dilakukan untuk permohonan yang berstatus Disetujui.');
@@ -184,7 +203,7 @@ class AdminLoanController extends Controller
             'category_id' => $loan->tool->category_id,
             'loan_id' => $loan->id,
             'type' => 'info',
-            'message' => 'Alat '.$loan->tool->name.' (No. Tiket '.$loan->ticket_number.') telah resmi diserahterimakan ke Anda. Harap merawat alat dan mengembalikannya sebelum '.$loan->end_date->translatedFormat('d M Y').' pukul 15.30 WIB.',
+            'message' => 'Alat '.$loan->tool->name.' (No. Peminjaman '.$loan->ticket_number.') telah resmi diserahterimakan ke Anda. Harap merawat alat dan mengembalikannya sebelum '.$loan->end_date->translatedFormat('d M Y').' pukul 15.30 WIB.',
             'is_read' => false,
         ]);
 
@@ -193,8 +212,10 @@ class AdminLoanController extends Controller
 
     public function reject(Request $request, Loan $loan): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
+        $this->authorizeLoanScope($loan);
+
+        if ($loan->status !== 'menunggu') {
+            return back()->with('error', 'Hanya permohonan dengan status Menunggu yang dapat ditolak.');
         }
 
         $request->validate([
@@ -218,7 +239,7 @@ class AdminLoanController extends Controller
             'category_id' => $loan->tool->category_id,
             'loan_id' => $loan->id,
             'type' => 'warning',
-            'message' => 'Permohonan peminjaman No. Tiket '.$loan->ticket_number.' belum dapat disetujui. Alasan: '.$reason,
+            'message' => 'Permohonan peminjaman No. Peminjaman '.$loan->ticket_number.' belum dapat disetujui. Alasan: '.$reason,
             'is_read' => false,
         ]);
 
@@ -227,8 +248,10 @@ class AdminLoanController extends Controller
 
     public function complete(Request $request, Loan $loan): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
+        $this->authorizeLoanScope($loan);
+
+        if ($loan->status !== 'dipinjam') {
+            return back()->with('error', 'Hanya peminjaman dengan status Sedang Dipinjam yang dapat diselesaikan.');
         }
 
         $request->validate([
@@ -237,55 +260,72 @@ class AdminLoanController extends Controller
             'return_notes' => 'nullable|string|max:500',
         ]);
 
-        $tool = $loan->tool;
-        $returnDate = Carbon::now();
         $condition = $request->input('return_condition');
         $fineStatus = $request->input('fine_status');
+        $returnDate = Carbon::now();
+        $notesInput = $request->input('return_notes', 'Pengembalian tercatat dengan kondisi: '.strtoupper($condition));
 
         $fineAmount = 0;
-        if ($returnDate->gt($loan->end_date)) {
-            $diffDays = $returnDate->diffInDays($loan->end_date);
-            if ($diffDays > 0) {
-                $fineAmount = $diffDays * $tool->fine_per_day * $loan->quantity;
-            }
-        }
+        $tool = $loan->tool;
 
-        if ($fineAmount === 0) {
-            $fineStatus = 'none';
-        }
-
-        if (! empty($loan->assigned_units)) {
-            foreach ($loan->assigned_units as $unitCode) {
-                $unit = ToolUnit::where('unit_code', $unitCode)->first();
-                if ($unit) {
-                    $newStatus = ($condition === 'baik') ? 'tersedia' : (($condition === 'rusak') ? 'rusak' : 'hilang');
-                    $unit->update([
-                        'status' => $newStatus,
-                        'condition' => $condition,
-                    ]);
+        try {
+            DB::transaction(function () use ($loan, $condition, &$fineStatus, &$fineAmount, &$tool, $returnDate, $notesInput) {
+                $lockedLoan = Loan::where('id', $loan->id)->lockForUpdate()->firstOrFail();
+                if ($lockedLoan->status !== 'dipinjam') {
+                    throw new \RuntimeException('Hanya peminjaman dengan status Sedang Dipinjam yang dapat diselesaikan.');
                 }
-            }
 
-            if ($condition === 'baik') {
-                $tool->increment('available_stock', $loan->quantity);
-            }
+                $tool = Tool::where('id', $lockedLoan->tool_id)->lockForUpdate()->firstOrFail();
+
+                if ($returnDate->gt($lockedLoan->end_date)) {
+                    $diffDays = $returnDate->diffInDays($lockedLoan->end_date);
+                    if ($diffDays > 0) {
+                        $fineAmount = $diffDays * $tool->fine_per_day * $lockedLoan->quantity;
+                    }
+                }
+
+                if ($fineAmount === 0) {
+                    $fineStatus = 'none';
+                }
+
+                if (! empty($lockedLoan->assigned_units)) {
+                    foreach ($lockedLoan->assigned_units as $unitCode) {
+                        $unit = ToolUnit::where('unit_code', $unitCode)->lockForUpdate()->first();
+                        if ($unit) {
+                            $newStatus = ($condition === 'baik') ? 'tersedia' : (($condition === 'rusak') ? 'rusak' : 'hilang');
+                            $unit->update([
+                                'status' => $newStatus,
+                                'condition' => $condition,
+                            ]);
+                        }
+                    }
+
+                    if ($condition === 'baik') {
+                        $tool->increment('available_stock', $lockedLoan->quantity);
+                    }
+                }
+
+                $notes = $notesInput;
+                if ($fineAmount > 0) {
+                    $notes .= ' (Terlambat, denda: Rp '.number_format($fineAmount, 0, ',', '.').' - Status: '.strtoupper($fineStatus).')';
+                }
+
+                $lockedLoan->update([
+                    'status' => 'selesai',
+                    'actual_return_date' => $returnDate->format('Y-m-d'),
+                    'return_condition' => $condition,
+                    'fine_amount' => $fineAmount,
+                    'fine_status' => $fineStatus,
+                    'pj_notes' => $lockedLoan->pj_notes.' | Pengembalian: '.$notes,
+                ]);
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        $notes = $request->input('return_notes', 'Pengembalian tercatat dengan kondisi: '.strtoupper($condition));
-        if ($fineAmount > 0) {
-            $notes .= ' (Terlambat, denda: Rp '.number_format($fineAmount, 0, ',', '.').' - Status: '.strtoupper($fineStatus).')';
-        }
+        $loan->refresh();
 
-        $loan->update([
-            'status' => 'selesai',
-            'actual_return_date' => $returnDate->format('Y-m-d'),
-            'return_condition' => $condition,
-            'fine_amount' => $fineAmount,
-            'fine_status' => $fineStatus,
-            'pj_notes' => $loan->pj_notes.' | Pengembalian: '.$notes,
-        ]);
-
-        $msgText = 'Pengembalian alat untuk No. Tiket '.$loan->ticket_number.' telah diterima oleh '.Auth::user()->name.' dengan kondisi fisik: '.strtoupper($condition).'.';
+        $msgText = 'Pengembalian alat untuk No. Peminjaman '.$loan->ticket_number.' telah diterima oleh '.Auth::user()->name.' dengan kondisi fisik: '.strtoupper($condition).'.';
         if ($fineAmount > 0) {
             $msgText .= ' Terdapat denda keterlambatan sebesar Rp '.number_format($fineAmount, 0, ',', '.').' (Status denda: '.strtoupper($fineStatus).').';
         }
@@ -303,11 +343,9 @@ class AdminLoanController extends Controller
         return back()->with('success', 'Pengembalian alat No. '.$loan->ticket_number.' berhasil diproses.');
     }
 
-    public function printTicket(Loan $loan): View|RedirectResponse
+    public function printTicket(Loan $loan): View
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeLoanScope($loan);
 
         $loan->load(['user', 'tool.category', 'approver']);
 
@@ -317,12 +355,8 @@ class AdminLoanController extends Controller
         return view('loans.print', compact('loan', 'backRoute', 'backLabel'));
     }
 
-    public function printReport(Request $request): View|RedirectResponse
+    public function printReport(Request $request): View
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
-
         $admin = Auth::user();
         $query = Loan::with(['user', 'tool.category', 'approver'])->latest();
 
@@ -375,9 +409,7 @@ class AdminLoanController extends Controller
 
     public function sendMessage(Request $request, Loan $loan): RedirectResponse
     {
-        if ($redirect = $this->checkAdmin()) {
-            return $redirect;
-        }
+        $this->authorizeLoanScope($loan);
 
         $validated = $request->validate([
             'type' => 'required|in:info,warning,approval',

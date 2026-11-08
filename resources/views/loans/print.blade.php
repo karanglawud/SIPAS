@@ -31,7 +31,7 @@
         <!-- Kop Surat Sekolah -->
         <div class="flex items-center gap-4 border-b-2 border-slate-900 pb-4 text-center">
             <div class="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center text-white font-black text-2xl shrink-0">
-                5
+                <img src="{{ asset('storage/images/1.png') }}" alt="Logo SIPAS" class="w-full h-full rounded-xl object-contain">
             </div>
             <div class="flex-grow">
                 <span class="text-xs uppercase tracking-widest font-bold text-slate-500">Pemerintah Provinsi Jawa Tengah • Dinas Pendidikan & Kebudayaan</span>
@@ -44,7 +44,7 @@
         <!-- Title of Document -->
         <div class="text-center space-y-1">
             <h2 class="text-base font-extrabold uppercase tracking-wider underline">SURAT BUKTI PEMINJAMAN ALAT SEKOLAH</h2>
-            <p class="text-xs font-mono font-bold text-blue-700">NOMOR TIKET: {{ $loan->ticket_number }}</p>
+            <p class="text-xs font-mono font-bold text-blue-700">NO. REGISTRASI PEMINJAMAN: {{ $loan->ticket_number }}</p>
         </div>
 
         <!-- Info Table -->

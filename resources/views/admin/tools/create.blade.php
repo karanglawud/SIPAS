@@ -4,7 +4,7 @@
 
 @section('content')
 <section class="py-10 bg-slate-50 min-h-screen">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         <div>
             <nav class="flex items-center gap-2 text-xs text-slate-400 mb-2">

@@ -76,7 +76,7 @@
                 <form action="{{ route('admin.loans.index') }}" method="GET" class="w-full sm:w-72 flex items-center gap-2">
                     <input type="hidden" name="status" value="{{ $statusTab }}">
                     <div class="relative w-full">
-                        <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama, NISN, tiket..." 
+                        <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama, NISN, no. peminjaman..." 
                             class="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white">
                         @if(request('q'))
                             <a href="{{ route('admin.loans.index', ['status' => $statusTab]) }}" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs font-bold">&times;</a>
@@ -598,7 +598,7 @@
                 const location = btn.getAttribute('data-location');
                 const units = JSON.parse(btn.getAttribute('data-units') || '[]');
 
-                approveSubtitle.textContent = `Tiket ${ticket} • ${tool} (${quantity} Unit)`;
+                approveSubtitle.textContent = `No. ${ticket} • ${tool} (${quantity} Unit)`;
                 approveRequiredQty.textContent = `${quantity} Unit`;
                 approvePjNotes.value = `Disetujui. Silakan mengambil alat fisik di ruang ${location} pada jam layanan sarana.`;
                 approveForm.setAttribute('action', `/admin/peminjaman/${loanId}/approve`);
@@ -636,7 +636,7 @@
                 const ticket = btn.getAttribute('data-ticket');
                 const tool = btn.getAttribute('data-tool');
 
-                rejectSubtitle.textContent = `Tiket ${ticket} • ${tool}`;
+                rejectSubtitle.textContent = `No. ${ticket} • ${tool}`;
                 rejectForm.setAttribute('action', `/admin/peminjaman/${loanId}/reject`);
                 rejectReasonInput.value = '';
 
@@ -668,7 +668,7 @@
                 const finePerDay = parseInt(btn.getAttribute('data-fine-per-day'), 10) || 0;
                 const quantity = parseInt(btn.getAttribute('data-quantity'), 10) || 1;
 
-                returnSubtitle.textContent = `Tiket ${ticket} • ${tool} (${quantity} Unit)`;
+                returnSubtitle.textContent = `No. ${ticket} • ${tool} (${quantity} Unit)`;
                 returnForm.setAttribute('action', `/admin/peminjaman/${loanId}/complete`);
 
                 if (isOverdue) {
@@ -699,14 +699,14 @@
         function openMessageModal(loanId, recipientName, ticket, tool, endDate, isOverdue) {
             currentLoanContext = { loanId, recipientName, ticket, tool, endDate };
 
-            msgRecipient.textContent = `Penerima: ${recipientName} (No. Tiket: ${ticket})`;
+            msgRecipient.textContent = `Penerima: ${recipientName} (No. Peminjaman: ${ticket})`;
             msgForm.setAttribute('action', `/admin/peminjaman/${loanId}/pesan`);
 
             if (isOverdue) {
-                msgBody.value = `Peringatan Keterlambatan: Masa peminjaman alat "${tool}" (No. Tiket ${ticket}) telah melewati batas tenggat (${endDate}). Harap segera mengembalikan alat fisik ke ruang sarana sekolah untuk menghindari akumulasi denda harian.`;
+                msgBody.value = `Peringatan Keterlambatan: Masa peminjaman alat "${tool}" (No. Peminjaman: ${ticket}) telah melewati batas tenggat (${endDate}). Harap segera mengembalikan alat fisik ke ruang sarana sekolah untuk menghindari akumulasi denda harian.`;
                 msgTypeWarning.checked = true;
             } else {
-                msgBody.value = `Pemberitahuan Petugas PJ: Mengenai pengajuan peminjaman alat "${tool}" (No. Tiket ${ticket})...`;
+                msgBody.value = `Pemberitahuan Petugas PJ: Mengenai pengajuan peminjaman alat "${tool}" (No. Peminjaman: ${ticket})...`;
                 msgTypeInfo.checked = true;
             }
 
@@ -735,26 +735,26 @@
                 const tool = btn.getAttribute('data-tool');
 
                 openMessageModal(loanId, recipientName, ticket, tool, '-', false);
-                msgBody.value = `Permintaan Berkas Proposal: Pengajuan peminjaman alat "${tool}" (No. Tiket ${ticket}) memerlukan berkas proposal / surat pengantar izin resmi sebelum dapat disetujui. Harap segera membawa berkas fisik ke ruang sarana.`;
+                msgBody.value = `Permintaan Berkas Proposal: Pengajuan peminjaman alat "${tool}" (No. Peminjaman: ${ticket}) memerlukan berkas proposal / surat pengantar izin resmi sebelum dapat disetujui. Harap segera membawa berkas fisik ke ruang sarana.`;
                 msgTypeWarning.checked = true;
             });
         });
 
         document.getElementById('msgTplLate')?.addEventListener('click', () => {
             if (!currentLoanContext) return;
-            msgBody.value = `Peringatan Keterlambatan: Masa peminjaman alat "${currentLoanContext.tool}" (No. Tiket ${currentLoanContext.ticket}) telah melewati batas tenggat. Mohon segera mengembalikan alat ke ruang sarana untuk menghindari akumulasi denda harian.`;
+            msgBody.value = `Peringatan Keterlambatan: Masa peminjaman alat "${currentLoanContext.tool}" (No. Peminjaman: ${currentLoanContext.ticket}) telah melewati batas tenggat. Mohon segera mengembalikan alat ke ruang sarana untuk menghindari akumulasi denda harian.`;
             msgTypeWarning.checked = true;
         });
 
         document.getElementById('msgTplProposal')?.addEventListener('click', () => {
             if (!currentLoanContext) return;
-            msgBody.value = `Permintaan Kelengkapan Berkas: Permohonan peminjaman alat "${currentLoanContext.tool}" (No. Tiket ${currentLoanContext.ticket}) memerlukan lampiran proposal kegiatan atau surat pengantar resmi. Silakan serahkan berkas ke ruang sarana.`;
+            msgBody.value = `Permintaan Kelengkapan Berkas: Permohonan peminjaman alat "${currentLoanContext.tool}" (No. Peminjaman: ${currentLoanContext.ticket}) memerlukan lampiran proposal kegiatan atau surat pengantar resmi. Silakan serahkan berkas ke ruang sarana.`;
             msgTypeWarning.checked = true;
         });
 
         document.getElementById('msgTplPickup')?.addEventListener('click', () => {
             if (!currentLoanContext) return;
-            msgBody.value = `Instruksi Pengambilan Alat: Permohonan alat "${currentLoanContext.tool}" (No. Tiket ${currentLoanContext.ticket}) telah siap diambil di ruang sarana kejuruan. Harap temui petugas PJ pada jam istirahat sekolah.`;
+            msgBody.value = `Instruksi Pengambilan Alat: Permohonan alat "${currentLoanContext.tool}" (No. Peminjaman: ${currentLoanContext.ticket}) telah siap diambil di ruang sarana kejuruan. Harap temui petugas PJ pada jam istirahat sekolah.`;
             msgTypeApproval.checked = true;
         });
     });

@@ -6,15 +6,13 @@ use App\Models\Category;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class MessageController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
 
         $categories = Category::with(['admins', 'messages' => function ($q) use ($user) {
             $q->where('recipient_id', $user->id)->latest();

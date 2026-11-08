@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Riwayat & Status Tiket Peminjaman')
+@section('title', 'Riwayat & Status Peminjaman')
 
 @section('content')
 <section class="py-10 bg-slate-50 min-h-screen">
@@ -58,7 +58,8 @@
                         
                         <!-- Top Bar: Ticket Number & Status Badge -->
                         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold text-slate-500">No. Peminjaman:</span>
                                 <span class="text-sm font-mono font-bold text-blue-950 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
                                     {{ $loan->ticket_number }}
                                 </span>
@@ -159,7 +160,7 @@
 
                                 @if($loan->status === 'dibatalkan')
                                     <span class="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-xl text-xs font-semibold border border-slate-200">
-                                        Tiket Dibatalkan
+                                        Permohonan Dibatalkan
                                     </span>
                                 @endif
                             </div>
@@ -186,7 +187,7 @@
                         Batalkan Permohonan Pinjam?
                     </h3>
                     <p class="text-xs text-slate-500 leading-relaxed">
-                        Anda akan membatalkan permohonan untuk alat <strong id="cancelToolName" class="text-slate-800"></strong> dengan Nomor Tiket <strong id="cancelTicketNumber" class="text-slate-800 font-mono"></strong>.
+                        Anda akan membatalkan permohonan untuk alat <strong id="cancelToolName" class="text-slate-800"></strong> dengan No. Peminjaman <strong id="cancelTicketNumber" class="text-slate-800 font-mono"></strong>.
                     </p>
                 </div>
             </div>

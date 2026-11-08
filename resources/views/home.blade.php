@@ -33,7 +33,7 @@
 
                     <a href="{{ route('loans.index') }}" class="inline-flex items-center gap-2 px-6 py-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border border-slate-300 shadow-xs hover:border-slate-400 hover:-translate-y-0.5 transition-all">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        Lacak Status Tiket
+                        Lacak Status Peminjaman
                     </a>
                 </div>
 
@@ -141,7 +141,7 @@
                 <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-xs">4</div>
                 <h3 class="text-base font-bold text-slate-900">Pengembalian &amp; Cek</h3>
                 <p class="text-xs text-slate-600 leading-relaxed">
-                    Kembalikan tepat waktu ke ruang alat praktik kejuruan. Petugas mencatat kondisi alat (Baik/Rusak/Hilang) dan menyelesaikan tiket.
+                    Kembalikan tepat waktu ke ruang alat praktik kejuruan. Petugas mencatat kondisi alat (Baik/Rusak/Hilang) dan menyelesaikan peminjaman.
                 </p>
             </div>
         </div>

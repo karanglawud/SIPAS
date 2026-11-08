@@ -842,4 +842,188 @@ class AdminDashboardFeatureTest extends TestCase
         $data['tool']->refresh();
         $this->assertEquals(2, $data['tool']->available_stock);
     }
+
+    // ─── Scope Authorization On Action Methods ─────────────────────────
+
+    public function test_scoped_admin_cannot_approve_other_category_loan(): void
+    {
+        $category1 = $this->createCategory('lab-komputer', 'Lab RPL');
+        $category2 = $this->createCategory('bengkel', 'Bengkel Mesin');
+
+        $scopedAdmin = $this->createAdmin('lab-komputer');
+        $borrower = $this->createBorrower();
+        $otherData = $this->createToolWithUnits($category2, 2);
+        $loan = $this->createLoan($borrower, $otherData['tool'], 'menunggu');
+
+        $response = $this->actingAs($scopedAdmin)->post(route('admin.loans.approve', $loan->id));
+        $response->assertStatus(403);
+    }
+
+    public function test_scoped_admin_cannot_reject_other_category_loan(): void
+    {
+        $category1 = $this->createCategory('lab-komputer', 'Lab RPL');
+        $category2 = $this->createCategory('bengkel', 'Bengkel Mesin');
+
+        $scopedAdmin = $this->createAdmin('lab-komputer');
+        $borrower = $this->createBorrower();
+        $otherData = $this->createToolWithUnits($category2, 2);
+        $loan = $this->createLoan($borrower, $otherData['tool'], 'menunggu');
+
+        $response = $this->actingAs($scopedAdmin)->post(route('admin.loans.reject', $loan->id), [
+            'reject_reason' => 'Tidak memenuhi syarat',
+        ]);
+        $response->assertStatus(403);
+    }
+
+    public function test_scoped_admin_cannot_handover_other_category_loan(): void
+    {
+        $category1 = $this->createCategory('lab-komputer', 'Lab RPL');
+        $category2 = $this->createCategory('bengkel', 'Bengkel Mesin');
+
+        $scopedAdmin = $this->createAdmin('lab-komputer');
+        $borrower = $this->createBorrower();
+        $otherData = $this->createToolWithUnits($category2, 2);
+        $loan = $this->createLoan($borrower, $otherData['tool'], 'disetujui');
+
+        $response = $this->actingAs($scopedAdmin)->post(route('admin.loans.handover', $loan->id));
+        $response->assertStatus(403);
+    }
+
+    public function test_scoped_admin_cannot_complete_other_category_loan(): void
+    {
+        $category1 = $this->createCategory('lab-komputer', 'Lab RPL');
+        $category2 = $this->createCategory('bengkel', 'Bengkel Mesin');
+
+        $scopedAdmin = $this->createAdmin('lab-komputer');
+        $borrower = $this->createBorrower();
+        $otherData = $this->createToolWithUnits($category2, 2);
+        $loan = $this->createLoan($borrower, $otherData['tool'], 'dipinjam');
+
+        $response = $this->actingAs($scopedAdmin)->post(route('admin.loans.complete', $loan->id), [
+            'return_condition' => 'baik',
+            'fine_status' => 'none',
+        ]);
+        $response->assertStatus(403);
+    }
+
+    public function test_scoped_admin_cannot_print_other_category_ticket(): void
+    {
+        $category1 = $this->createCategory('lab-komputer', 'Lab RPL');
+        $category2 = $this->createCategory('bengkel', 'Bengkel Mesin');
+
+        $scopedAdmin = $this->createAdmin('lab-komputer');
+        $borrower = $this->createBorrower();
+        $otherData = $this->createToolWithUnits($category2, 2);
+        $loan = $this->createLoan($borrower, $otherData['tool'], 'disetujui');
+
+        $response = $this->actingAs($scopedAdmin)->get(route('admin.loans.print', $loan->id));
+        $response->assertStatus(403);
+    }
+
+    public function test_scoped_admin_cannot_manage_other_category_tool_units(): void
+    {
+        $category1 = $this->createCategory('lab-komputer', 'Lab RPL');
+        $category2 = $this->createCategory('bengkel', 'Bengkel Mesin');
+
+        $scopedAdmin = $this->createAdmin('lab-komputer');
+        $otherData = $this->createToolWithUnits($category2, 2);
+
+        // Cannot add unit
+        $response = $this->actingAs($scopedAdmin)->post(route('admin.tools.units.store', $otherData['tool']->id), [
+            'condition' => 'baik',
+        ]);
+        $response->assertStatus(403);
+
+        // Cannot update unit
+        $response = $this->actingAs($scopedAdmin)->patch(route('admin.tools.units.update', $otherData['units'][0]->id), [
+            'status' => 'rusak',
+            'condition' => 'rusak berat',
+        ]);
+        $response->assertStatus(403);
+
+        // Cannot destroy unit
+        $response = $this->actingAs($scopedAdmin)->delete(route('admin.tools.units.destroy', $otherData['units'][0]->id));
+        $response->assertStatus(403);
+
+        // Cannot destroy tool
+        $response = $this->actingAs($scopedAdmin)->delete(route('admin.tools.destroy', $otherData['tool']->id));
+        $response->assertStatus(403);
+    }
+
+    // ─── Status Guard Tests ───────────────────────────────────────────
+
+    public function test_cannot_approve_loan_that_is_already_approved(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 3);
+        $borrower = $this->createBorrower();
+        $loan = $this->createLoan($borrower, $data['tool'], 'disetujui');
+
+        $response = $this->actingAs($admin)->post(route('admin.loans.approve', $loan->id));
+        $response->assertSessionHas('error');
+    }
+
+    public function test_cannot_approve_loan_that_is_rejected_or_cancelled(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 3);
+        $borrower = $this->createBorrower();
+
+        $rejectedLoan = $this->createLoan($borrower, $data['tool'], 'ditolak');
+        $response = $this->actingAs($admin)->post(route('admin.loans.approve', $rejectedLoan->id));
+        $response->assertSessionHas('error');
+
+        $cancelledLoan = $this->createLoan($borrower, $data['tool'], 'dibatalkan');
+        $response = $this->actingAs($admin)->post(route('admin.loans.approve', $cancelledLoan->id));
+        $response->assertSessionHas('error');
+    }
+
+    public function test_cannot_reject_loan_that_is_not_menunggu(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 3);
+        $borrower = $this->createBorrower();
+        $loan = $this->createLoan($borrower, $data['tool'], 'disetujui');
+
+        $response = $this->actingAs($admin)->post(route('admin.loans.reject', $loan->id), [
+            'reject_reason' => 'Alasan penolakan',
+        ]);
+        $response->assertSessionHas('error');
+    }
+
+    public function test_cannot_complete_loan_that_is_not_dipinjam(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 3);
+        $borrower = $this->createBorrower();
+        $loan = $this->createLoan($borrower, $data['tool'], 'menunggu');
+
+        $response = $this->actingAs($admin)->post(route('admin.loans.complete', $loan->id), [
+            'return_condition' => 'baik',
+            'fine_status' => 'none',
+        ]);
+        $response->assertSessionHas('error');
+    }
+
+    public function test_cannot_approve_when_stock_is_insufficient(): void
+    {
+        $admin = $this->createAdmin();
+        $category = $this->createCategory();
+        $data = $this->createToolWithUnits($category, 1);
+        $borrower = $this->createBorrower();
+
+        // Loan requests 2 units, but available stock is only 1
+        $loan = $this->createLoan($borrower, $data['tool'], 'menunggu', ['quantity' => 2]);
+
+        $response = $this->actingAs($admin)->post(route('admin.loans.approve', $loan->id));
+        $response->assertSessionHas('error');
+
+        $loan->refresh();
+        $this->assertEquals('menunggu', $loan->status);
+        $this->assertEquals(1, $data['tool']->fresh()->available_stock);
+    }
 }

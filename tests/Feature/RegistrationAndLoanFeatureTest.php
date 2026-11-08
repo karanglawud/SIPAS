@@ -258,4 +258,82 @@ class RegistrationAndLoanFeatureTest extends TestCase
         $loan->refresh();
         $this->assertEquals('menunggu', $loan->status);
     }
+
+    public function test_guest_cannot_access_borrower_routes(): void
+    {
+        $response = $this->get(route('loans.index'));
+        $response->assertRedirect(route('login'));
+
+        $response = $this->get(route('loans.create'));
+        $response->assertRedirect(route('login'));
+
+        $response = $this->get(route('messages.index'));
+        $response->assertRedirect(route('login'));
+    }
+
+    public function test_ticket_number_generation_does_not_collide_when_previous_loan_deleted(): void
+    {
+        $user = User::factory()->create(['role' => 'siswa', 'class_or_dept' => 'XII RPL B']);
+        $category = Category::create([
+            'slug' => 'lab-komputer',
+            'name' => 'Lab RPL & Elektronika',
+            'badge' => 'RPL SMKN 5',
+            'pj_name' => 'Ibu Rina',
+            'pj_role_title' => 'PJ Lab RPL',
+            'description' => 'Peralatan Lab RPL',
+            'icon' => 'cpu',
+            'color' => 'blue',
+        ]);
+        $tool = Tool::create([
+            'category_id' => $category->id,
+            'code' => 'LAB-OSC-01',
+            'name' => 'Digital Oscilloscope 100MHz',
+            'spec' => 'Spesifikasi Lab',
+            'location' => 'Lab RPL 1',
+            'total_stock' => 10,
+            'available_stock' => 10,
+            'max_days' => 3,
+            'fine_per_day' => 10000,
+            'image_gradient' => 'from-blue-600 to-indigo-700',
+        ]);
+
+        // Submit first loan -> will get SIPAS-YYYY-101
+        $this->actingAs($user)->post(route('loans.store'), [
+            'tool_id' => $tool->id,
+            'quantity' => 1,
+            'start_date' => now()->toDateString(),
+            'duration_days' => 2,
+            'purpose' => 'Pengujian 1',
+        ]);
+        $loan1 = Loan::first();
+        $this->assertNotNull($loan1);
+
+        // Submit second loan -> will get SIPAS-YYYY-102
+        $this->actingAs($user)->post(route('loans.store'), [
+            'tool_id' => $tool->id,
+            'quantity' => 1,
+            'start_date' => now()->toDateString(),
+            'duration_days' => 2,
+            'purpose' => 'Pengujian 2',
+        ]);
+        $loan2 = Loan::latest('id')->first();
+
+        // Delete loan1 (simulating deletion/cascade)
+        $loan1->delete();
+
+        // Count is now 1. If formula was count() + 101, it would yield 102 (collision with loan2!).
+        // Our collision-safe generator should assign 103 without error.
+        $response = $this->actingAs($user)->post(route('loans.store'), [
+            'tool_id' => $tool->id,
+            'quantity' => 1,
+            'start_date' => now()->toDateString(),
+            'duration_days' => 2,
+            'purpose' => 'Pengujian 3',
+        ]);
+        $response->assertRedirect(route('loans.index'));
+        $response->assertSessionHas('success');
+
+        $loan3 = Loan::latest('id')->first();
+        $this->assertNotEquals($loan2->ticket_number, $loan3->ticket_number);
+    }
 }

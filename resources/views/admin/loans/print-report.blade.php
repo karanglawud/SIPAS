@@ -102,7 +102,7 @@
                 <thead>
                     <tr class="bg-slate-100 border-b border-slate-300 text-[11px] font-bold text-slate-700">
                         <th class="py-2.5 px-3 text-center w-8 border-r border-slate-300">No</th>
-                        <th class="py-2.5 px-3 border-r border-slate-300">No. Tiket</th>
+                        <th class="py-2.5 px-3 border-r border-slate-300">No. Peminjaman</th>
                         <th class="py-2.5 px-3 border-r border-slate-300">Peminjam</th>
                         <th class="py-2.5 px-3 border-r border-slate-300">Alat Praktik</th>
                         <th class="py-2.5 px-3 text-center border-r border-slate-300">Qty</th>

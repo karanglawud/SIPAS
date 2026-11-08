@@ -86,9 +86,9 @@
                     <!-- Optional: Link with active loan -->
                     @if($activeLoans->isNotEmpty())
                         <div class="space-y-1">
-                            <label class="block font-bold text-slate-700">Hubungkan dengan Tiket Pinjam (Opsional):</label>
+                            <label class="block font-bold text-slate-700">Hubungkan dengan Data Peminjaman (Opsional):</label>
                             <select name="loan_id" id="loanSelect" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:ring-2 focus:ring-blue-900 focus:outline-none">
-                                <option value="">-- Tanpa Tautan Tiket --</option>
+                                <option value="">-- Tanpa Tautan Peminjaman --</option>
                                 @foreach($activeLoans as $al)
                                     <option value="{{ $al->id }}" data-recipient="{{ $al->user_id }}" data-tool="{{ $al->tool->name }}" data-ticket="{{ $al->ticket_number }}" data-end="{{ $al->end_date->format('d/m/Y') }}">
                                         [{{ $al->ticket_number }}] {{ $al->user->name }} - {{ $al->tool->name }}
@@ -223,10 +223,10 @@
         document.getElementById('tplLate').addEventListener('click', () => {
             const selectedOpt = loanSelect ? loanSelect.options[loanSelect.selectedIndex] : null;
             const tool = selectedOpt?.getAttribute('data-tool') || '[Nama Alat]';
-            const ticket = selectedOpt?.getAttribute('data-ticket') || '[No. Tiket]';
+            const ticket = selectedOpt?.getAttribute('data-ticket') || '[No. Peminjaman]';
             const end = selectedOpt?.getAttribute('data-end') || '[Batas Tanggal]';
 
-            messageBody.value = `Pemberitahuan Keterlambatan: Masa peminjaman alat "${tool}" (No. Tiket: ${ticket}) telah melewati batas tenggat pengembalian (${end}). Mohon segera mengembalikan alat fisik ke ruang sarana kejuruan untuk menghindari akumulasi denda keterlambatan.`;
+            messageBody.value = `Pemberitahuan Keterlambatan: Masa peminjaman alat "${tool}" (No. Peminjaman: ${ticket}) telah melewati batas tenggat pengembalian (${end}). Mohon segera mengembalikan alat fisik ke ruang sarana kejuruan untuk menghindari akumulasi denda keterlambatan.`;
             typeWarning.checked = true;
         });
 
@@ -234,9 +234,9 @@
         document.getElementById('tplProposal').addEventListener('click', () => {
             const selectedOpt = loanSelect ? loanSelect.options[loanSelect.selectedIndex] : null;
             const tool = selectedOpt?.getAttribute('data-tool') || '[Nama Alat]';
-            const ticket = selectedOpt?.getAttribute('data-ticket') || '[No. Tiket]';
+            const ticket = selectedOpt?.getAttribute('data-ticket') || '[No. Peminjaman]';
 
-            messageBody.value = `Permintaan Kelengkapan Berkas: Permohonan peminjaman alat "${tool}" (No. Tiket: ${ticket}) memerlukan lampiran proposal kegiatan atau surat pengantar resmi yang ditandatangani guru pembina. Silakan bawa berkas fisik ke ruang sarana untuk verifikasi persetujuan.`;
+            messageBody.value = `Permintaan Kelengkapan Berkas: Permohonan peminjaman alat "${tool}" (No. Peminjaman: ${ticket}) memerlukan lampiran proposal kegiatan atau surat pengantar resmi yang ditandatangani guru pembina. Silakan bawa berkas fisik ke ruang sarana untuk verifikasi persetujuan.`;
             typeWarning.checked = true;
         });
 
@@ -244,9 +244,9 @@
         document.getElementById('tplPickup').addEventListener('click', () => {
             const selectedOpt = loanSelect ? loanSelect.options[loanSelect.selectedIndex] : null;
             const tool = selectedOpt?.getAttribute('data-tool') || '[Nama Alat]';
-            const ticket = selectedOpt?.getAttribute('data-ticket') || '[No. Tiket]';
+            const ticket = selectedOpt?.getAttribute('data-ticket') || '[No. Peminjaman]';
 
-            messageBody.value = `Instruksi Pengambilan Alat: Permohonan alat "${tool}" (No. Tiket: ${ticket}) telah disiapkan. Silakan mengambil alat fisik di ruang sarana kejuruan pada jam istirahat atau jam layanan sekolah dengan menunjukkan kartu identitas siswa/guru.`;
+            messageBody.value = `Instruksi Pengambilan Alat: Permohonan alat "${tool}" (No. Peminjaman: ${ticket}) telah disiapkan. Silakan mengambil alat fisik di ruang sarana kejuruan pada jam istirahat atau jam layanan sekolah dengan menunjukkan kartu identitas siswa/guru.`;
             typeApproval.checked = true;
         });
 
