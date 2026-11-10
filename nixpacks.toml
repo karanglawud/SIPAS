@@ -25,5 +25,8 @@ cmds = [
     "composer install --no-dev --optimize-autoloader --no-interaction"
 ]
 
+[phases.build]
+cmds = ["echo 'Skipping npm build: using precompiled assets in public/build'"]
+
 [start]
 cmd = "bash start.sh"
