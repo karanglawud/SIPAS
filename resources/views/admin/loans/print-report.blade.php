@@ -32,7 +32,7 @@
         <!-- Kop Surat Sekolah -->
         <div class="flex items-center gap-4 border-b-2 border-slate-900 pb-4 text-center">
             <div class="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center text-white font-black text-2xl shrink-0">
-                5
+                <img src="{{ asset('storage/images/1.png') }}" alt="Logo SIPAS" class="w-full h-full rounded-xl object-contain">
             </div>
             <div class="flex-grow">
                 <span class="text-xs uppercase tracking-widest font-bold text-slate-500">Pemerintah Provinsi Jawa Tengah • Dinas Pendidikan &amp; Kebudayaan</span>

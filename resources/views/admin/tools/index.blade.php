@@ -27,9 +27,9 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-2.5">
-                <a href="{{ route('admin.tools.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-800 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all shrink-0">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <div class="flex items-center gap-2.5 shrink-0">
+                <a href="{{ route('admin.tools.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-800 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all shrink-0 whitespace-nowrap">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     <span>Tambah Alat Baru</span>
                 </a>
             </div>

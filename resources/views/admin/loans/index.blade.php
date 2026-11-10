@@ -7,36 +7,36 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         <!-- Header with Admin Scope -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-                <nav class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div class="space-y-1">
+                <nav class="flex items-center gap-2 text-xs text-slate-400 mb-1.5">
                     <a href="{{ route('home') }}" class="hover:text-blue-600">Beranda</a>
                     <span>/</span>
                     <span class="text-slate-700 font-semibold">Panel Admin PJ Alat</span>
                 </nav>
-                <div class="flex items-center gap-3">
-                    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Panel Verifikasi Peminjaman Alat</h1>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Panel Verifikasi Peminjaman Alat</h1>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
                         Admin: {{ $admin->class_or_dept ?? $admin->name }}
                     </span>
                 </div>
-                <p class="text-slate-500 text-xs sm:text-sm mt-1">
+                <p class="text-slate-500 text-xs sm:text-sm">
                     Verifikasi pengajuan siswa/guru, alokasikan unit fisik spesifik, kirim pesan peringatan, dan catat kondisi pengembalian alat.
                 </p>
             </div>
 
-            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                <a href="{{ route('admin.loans.report.print', ['status' => $statusTab, 'q' => request('q')]) }}" target="_blank" class="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2" title="Cetak Rekap Laporan PDF">
-                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    <span>Cetak Rekap Laporan</span>
+            <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
+                <a href="{{ route('admin.loans.report.print', ['status' => $statusTab, 'q' => request('q')]) }}" target="_blank" class="px-3.5 sm:px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-2xl text-xs font-bold shadow-xs hover:border-slate-400 transition-all inline-flex items-center gap-2 shrink-0 whitespace-nowrap" title="Cetak Rekap Laporan PDF">
+                    <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    <span class="whitespace-nowrap">Cetak Rekap Laporan</span>
                 </a>
-                <a href="{{ route('admin.tools.index') }}" class="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                    <span>Kelola Inventaris Alat</span>
+                <a href="{{ route('admin.tools.index') }}" class="px-3.5 sm:px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-2xl text-xs font-bold shadow-xs hover:border-slate-400 transition-all inline-flex items-center gap-2 shrink-0 whitespace-nowrap">
+                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <span class="whitespace-nowrap">Kelola Inventaris Alat</span>
                 </a>
-                <a href="{{ route('admin.messages.index') }}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-800 text-white rounded-2xl text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                    <span>Pusat Pesan</span>
+                <a href="{{ route('admin.messages.index') }}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold shadow-xs hover:shadow-md transition-all inline-flex items-center gap-2 shrink-0 whitespace-nowrap">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                    <span class="whitespace-nowrap">Pusat Pesan</span>
                 </a>
             </div>
         </div>
