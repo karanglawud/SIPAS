@@ -18,15 +18,7 @@ php artisan view:cache
 echo "==> [SIPAS] Running database migrations..."
 php artisan migrate --force
 
-# 4. Jalankan web server (Nginx + PHP-FPM jika tersedia di Nixpacks, fallback ke artisan serve)
+# 4. Jalankan web server
 echo "==> [SIPAS] Starting web server on port ${PORT:-8080}..."
-export PHP_CLI_SERVER_WORKERS=${PHP_CLI_SERVER_WORKERS:-4}
-
-if [ -f "/assets/scripts/prestart.mjs" ]; then
-    echo "==> Using Nixpacks Nginx + PHP-FPM stack..."
-    node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf &) && nginx -c /nginx.conf
-else
-    echo "==> Using PHP artisan serve..."
-    exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
-fi
+exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
 
