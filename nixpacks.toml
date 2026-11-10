@@ -6,6 +6,7 @@ NIXPACKS_PHP_ROOT_DIR = "/app/public"
 [phases.setup]
 nixPkgs = [
     "php84",
+    "nodejs_22",
     "php84Extensions.pdo",
     "php84Extensions.pdo_mysql",
     "php84Extensions.mbstring",
