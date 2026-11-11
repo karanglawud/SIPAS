@@ -5,6 +5,7 @@ echo "==> [SIPAS] Preparing Laravel application for Railway..."
 
 # 1. Pastikan folder storage dan bootstrap cache tersedia
 mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
+rm -rf public/storage
 php artisan storage:link || true
 
 # 2. Cache konfigurasi, rute, dan view untuk performa production
