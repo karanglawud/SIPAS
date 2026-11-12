@@ -8,7 +8,12 @@ mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
 rm -rf public/storage
 php artisan storage:link || true
 
-# 2. Clear semua cache lama, lalu build ulang cache production
+# 2. Pastikan SESSION_DRIVER=database di production (file session tidak persisten di Railway)
+if [ -z "$SESSION_DRIVER" ] || [ "$SESSION_DRIVER" = "file" ]; then
+    export SESSION_DRIVER=database
+fi
+
+# 3. Clear semua cache lama, lalu build ulang cache production
 echo "==> [SIPAS] Clearing old cache and rebuilding for production..."
 php artisan optimize:clear
 php artisan config:cache

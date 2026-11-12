@@ -21,6 +21,19 @@
         </div>
 
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+
+            {{-- Validation error summary --}}
+            @if($errors->any())
+                <div class="mb-5 p-4 bg-rose-50 border border-rose-200 rounded-2xl">
+                    <p class="text-xs font-bold text-rose-700 mb-1">⚠️ Mohon perbaiki kesalahan berikut:</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach($errors->all() as $error)
+                            <li class="text-[11px] text-rose-600">{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form action="{{ route('admin.tools.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5 text-xs">
                 @csrf
 
