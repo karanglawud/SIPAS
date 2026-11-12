@@ -24,6 +24,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         pcntl \
         intl
 
+# PHP config overrides for production
+RUN echo "upload_max_filesize=10M" >> /usr/local/etc/php/conf.d/sipas.ini \
+    && echo "post_max_size=12M" >> /usr/local/etc/php/conf.d/sipas.ini \
+    && echo "memory_limit=256M" >> /usr/local/etc/php/conf.d/sipas.ini
+
 # Copy official Composer binary
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

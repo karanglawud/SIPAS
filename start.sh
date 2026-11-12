@@ -8,12 +8,13 @@ mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
 rm -rf public/storage
 php artisan storage:link || true
 
-# 2. Cache konfigurasi, rute, dan view untuk performa production
-echo "==> [SIPAS] Caching configuration, routes, and views..."
-php artisan config:clear
+# 2. Clear semua cache lama, lalu build ulang cache production
+echo "==> [SIPAS] Clearing old cache and rebuilding for production..."
+php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+php artisan event:cache
 
 # 3. Jalankan migrasi database secara otomatis
 echo "==> [SIPAS] Running database migrations..."
