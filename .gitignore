@@ -23,6 +23,7 @@
 /database/*.sqlite
 /database/sipas.sql
 /sipas.sql
+*.sql
 _ide_helper.php
 Homestead.json
 Homestead.yaml

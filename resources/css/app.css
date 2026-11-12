@@ -16,3 +16,11 @@
     }
 }
 
+@utility touch-manipulation {
+    touch-action: manipulation;
+}
+
+/* Mobile tap optimization */
+a, button {
+    -webkit-tap-highlight-color: transparent;
+}

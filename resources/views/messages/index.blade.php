@@ -3,19 +3,19 @@
 @section('title', 'Kanal Pemberitahuan Petugas PJ Alat - SIPAS')
 
 @section('content')
-<section class="py-8 bg-slate-100 min-h-[calc(100vh-140px)]">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section class="py-2.5 sm:py-8 bg-slate-100 min-h-[calc(100vh-140px)]">
+    <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
         
-        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row h-[750px]">
+        <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row h-[calc(100dvh-170px)] sm:h-[750px]">
             
             <!-- Left Panel: Channel List -->
-            <div class="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col bg-slate-50/70">
+            <div class="{{ request()->filled('kategori') ? 'hidden md:flex' : 'flex' }} w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-slate-200 flex-col bg-slate-50/70 h-full">
                 
                 <!-- Left Header -->
-                <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
+                <div class="p-3.5 sm:p-4 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
                     <div>
-                        <h2 class="text-base font-bold text-slate-900">Pemberitahuan Peminjaman</h2>
-                        <p class="text-[11px] text-slate-500">Kanal Resmi Petugas PJ Kategori Alat</p>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900">Pemberitahuan Peminjaman</h2>
+                        <p class="text-[10px] sm:text-[11px] text-slate-500">Kanal Resmi Petugas PJ Kategori Alat</p>
                     </div>
                     <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
                 </div>
@@ -29,9 +29,9 @@
                             $isActive = $activeCategory && $activeCategory->id === $cat->id;
                         @endphp
                         <a href="{{ route('messages.index', ['kategori' => $cat->slug]) }}" 
-                           class="p-4 flex items-start gap-3 transition-colors {{ $isActive ? 'bg-white border-l-4 border-blue-900 shadow-2xs' : 'hover:bg-slate-100/80' }}">
+                           class="p-3.5 sm:p-4 flex items-start gap-3 transition-colors {{ $isActive ? 'bg-white border-l-4 border-blue-900 shadow-2xs' : 'hover:bg-slate-100/80' }}">
                             
-                            <div class="w-11 h-11 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
+                            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-blue-900 text-white flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 shadow-2xs">
                                 {{ strtoupper(substr($cat->name, 0, 2)) }}
                             </div>
 
@@ -45,7 +45,7 @@
                                     @endif
                                 </div>
 
-                                <p class="text-[11px] text-slate-500 truncate mb-1">
+                                <p class="text-[10.5px] sm:text-[11px] text-slate-500 truncate mb-1">
                                     PJ: {{ $cat->pj_name }}
                                 </p>
 
@@ -61,6 +61,10 @@
                                 </div>
                             </div>
 
+                            <!-- Mobile chevron indicator -->
+                            <div class="flex items-center self-center pl-1 text-slate-300 md:hidden shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </div>
                         </a>
                     @endforeach
                 </div>
@@ -68,33 +72,43 @@
             </div>
 
             <!-- Right Panel: Message Thread (Clean School Notification Center) -->
-            <div class="flex-grow flex flex-col bg-slate-50">
+            <div class="{{ request()->filled('kategori') ? 'flex' : 'hidden md:flex' }} flex-grow flex-col bg-slate-50 h-full min-w-0">
                 
                 @if($activeCategory)
                     <!-- Active Channel Header -->
-                    <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-bold text-sm shadow-2xs">
+                    <div class="p-3 sm:p-4 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                            <!-- Back Button (Mobile Only) -->
+                            <a href="{{ route('messages.index') }}" 
+                               class="md:hidden p-2 -ml-1 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all flex items-center justify-center shrink-0" 
+                               title="Kembali ke Daftar Saluran"
+                               aria-label="Kembali ke Daftar Saluran">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                                </svg>
+                            </a>
+
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-900 text-white flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 shadow-2xs">
                                 {{ strtoupper(substr($activeCategory->name, 0, 2)) }}
                             </div>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-bold text-slate-900">{{ $activeCategory->name }}</h3>
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 sm:gap-2">
+                                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 truncate">{{ $activeCategory->name }}</h3>
+                                    <span class="px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                                         {{ $activeCategory->badge }}
                                     </span>
                                 </div>
-                                <p class="text-xs text-slate-500">Penanggung Jawab: <strong class="text-slate-700">{{ $activeCategory->pj_name }}</strong></p>
+                                <p class="text-[10.5px] sm:text-xs text-slate-500 truncate">Penanggung Jawab: <strong class="text-slate-700">{{ $activeCategory->pj_name }}</strong></p>
                             </div>
                         </div>
 
-                        <span class="text-[11px] font-medium text-slate-400 hidden sm:inline">
+                        <span class="text-[11px] font-medium text-slate-400 hidden sm:inline shrink-0">
                             Kanal Terverifikasi Sekolah
                         </span>
                     </div>
 
                     <!-- Chat Messages Flow Container -->
-                    <div class="flex-grow overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-100/60">
+                    <div class="flex-grow overflow-y-auto p-3.5 sm:p-6 space-y-3.5 sm:space-y-4 bg-slate-100/60">
                         
                         @if($messages->isEmpty())
                             <div class="h-full flex flex-col items-center justify-center text-center p-8 space-y-2">
@@ -120,7 +134,7 @@
                                     </span>
 
                                     <!-- Message Bubble -->
-                                    <div class="bg-white rounded-2xl rounded-tl-xs p-4 border border-slate-200 shadow-2xs space-y-3 text-xs text-slate-800 leading-relaxed">
+                                    <div class="bg-white rounded-2xl rounded-tl-xs p-3.5 sm:p-4 border border-slate-200 shadow-2xs space-y-3 text-xs text-slate-800 leading-relaxed">
                                         
                                         <p>{{ $msg->message }}</p>
 
@@ -168,9 +182,9 @@
                     </div>
 
                     <!-- Bottom Bar (One-Way Info Note) -->
-                    <div class="p-3 bg-white border-t border-slate-200 text-center text-[11px] text-slate-500 flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4 text-blue-900 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>Kanal Pemberitahuan Resmi SIPAS — SMK Negeri 5 Surakarta (Satu Arah dari Petugas PJ Kategori Alat)</span>
+                    <div class="p-2.5 sm:p-3 bg-white border-t border-slate-200 text-center text-[10px] sm:text-[11px] text-slate-500 flex items-center justify-center gap-1.5 sm:gap-2 shrink-0">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-900 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="truncate sm:whitespace-normal">Kanal Pemberitahuan Resmi SIPAS — Satu Arah dari Petugas PJ Alat</span>
                     </div>
 
                 @else
