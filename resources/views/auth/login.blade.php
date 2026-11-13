@@ -8,7 +8,7 @@
         
         <div class="text-center space-y-2">
             <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-xl mx-auto shadow-xs border border-blue-500">
-                S
+               <img src="{{ asset('storage/images/1.png') }}" alt="Logo SIPAS" class="w-full h-full rounded-xl object-contain">
             </div>
             <h1 class="text-2xl font-extrabold text-slate-900">Masuk ke SIPAS</h1>
             <p class="text-xs text-slate-500">Sistem Informasi Peminjaman Alat Sekolah</p>
