@@ -135,13 +135,15 @@
                         <div class="space-y-2 sm:space-y-3">
                             <div class="flex items-start justify-between gap-2.5">
                                 <div class="flex items-center gap-2.5 min-w-0">
-                                    @if($tool->image)
-                                        <img src="{{ asset('storage/' . $tool->image) }}" alt="{{ $tool->name }}" class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl object-cover shrink-0 border border-slate-200 shadow-2xs">
-                                    @else
-                                        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-600 flex items-center justify-center text-white font-mono font-bold text-xs shadow-2xs shrink-0">
-                                            {{ substr($tool->code, 0, 3) }}
-                                        </div>
+                                    @php
+                                        $hasValidImage = !empty($tool->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($tool->image);
+                                    @endphp
+                                    @if($hasValidImage)
+                                        <img src="{{ asset('storage/' . $tool->image) }}" alt="{{ $tool->name }}" class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl object-cover shrink-0 border border-slate-200 shadow-2xs" onerror="this.classList.add('hidden'); this.nextElementSibling?.classList.remove('hidden');">
                                     @endif
+                                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-600 flex items-center justify-center text-white font-mono font-bold text-xs shadow-2xs shrink-0 {{ $hasValidImage ? 'hidden' : '' }}">
+                                        {{ substr($tool->code, 0, 3) }}
+                                    </div>
                                     <div class="min-w-0">
                                         <div class="flex items-center gap-1.5 flex-wrap">
                                             <span class="text-[10px] sm:text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">

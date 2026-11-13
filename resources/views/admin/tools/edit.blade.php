@@ -96,8 +96,11 @@
                             <div class="flex flex-col sm:flex-row items-center gap-4">
                                 <!-- Preview Box -->
                                 <div id="editImagePreviewContainer" class="w-24 h-24 rounded-2xl bg-slate-200 flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 relative group">
-                                    @if($tool->image)
-                                        <img id="editImagePreview" src="{{ asset('storage/' . $tool->image) }}" alt="{{ $tool->name }}" class="w-full h-full object-cover">
+                                    @php
+                                        $hasValidImage = !empty($tool->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($tool->image);
+                                    @endphp
+                                    @if($hasValidImage)
+                                        <img id="editImagePreview" src="{{ asset('storage/' . $tool->image) }}" alt="{{ $tool->name }}" class="w-full h-full object-cover" onerror="this.classList.add('hidden'); document.getElementById('editImagePlaceholder')?.classList.remove('hidden');">
                                         <div id="editImagePlaceholder" class="hidden flex-col items-center justify-center text-slate-400">
                                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                             <span class="text-[9px] font-semibold mt-1">Belum ada foto</span>
