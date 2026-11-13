@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rekap Riwayat Peminjaman - {{ $user->name }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('storage/images/1.png') }}">
     @vite(['resources/css/app.css'])
     <style>
         @media print {
