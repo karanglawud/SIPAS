@@ -269,7 +269,7 @@
                     <div class="md:col-span-2 space-y-3">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-8 rounded-xl bg-blue-900 flex items-center justify-center text-white font-black text-sm border border-blue-800">
-                                S
+                                 <img src="{{ asset('storage/images/1.png') }}" alt="Logo SIPAS" class="w-full h-full rounded-xl object-contain">
                             </div>
                             <span class="text-lg font-black tracking-tight text-white">SIPAS • SMKN 5 Surakarta</span>
                         </div>

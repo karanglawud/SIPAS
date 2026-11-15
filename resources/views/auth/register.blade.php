@@ -9,7 +9,7 @@
         <!-- Header -->
         <div class="text-center space-y-2">
             <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-xl mx-auto shadow-xs border border-blue-500">
-                S
+                <img src="{{ asset('storage/images/1.png') }}" alt="Logo SIPAS" class="w-full h-full rounded-xl object-contain">
             </div>
             <h1 class="text-2xl font-extrabold text-slate-900">Daftar Akun Peminjam</h1>
             <p class="text-xs text-slate-500">Pilih peran Anda (Siswa atau Guru). Keduanya memiliki hak akses meminjam alat sekolah.</p>
