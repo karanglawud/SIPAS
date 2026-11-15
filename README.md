@@ -39,7 +39,7 @@ Alur status peminjaman: `menunggu` → `disetujui` → `dipinjam` → `selesai`,
 
 ## Prasyarat
 
-- PHP 8.3 atau lebih baru dengan ekstensi umum Laravel (`pdo`, `mbstring`, `gd`, `zip`, `intl`, dll.)
+- PHP 8.3 atau lebih baru dengan ekstensi umum Laravel (`pdo`, `mbstring`, `gd`, `zip`, `intl`, dll.). Proyek ini dikembangkan dengan PHP 8.5, sedangkan image Docker untuk Railway memakai PHP 8.4
 - Composer 2
 - Node.js dan npm
 
