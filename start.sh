@@ -5,6 +5,13 @@ echo "==> [SIPAS] Preparing Laravel application for Railway..."
 
 # 1. Pastikan folder storage dan bootstrap cache tersedia
 mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
+mkdir -p storage/app/public/images/unit storage/app/public/proposals
+
+# Jika volume persistent terpasang, sinkronkan file bawaan (logo & seed images) tanpa menimpa file user
+if [ -d "/app/storage_defaults" ]; then
+    cp -rn /app/storage_defaults/* storage/app/public/ 2>/dev/null || true
+fi
+
 rm -rf public/storage
 php artisan storage:link || true
 

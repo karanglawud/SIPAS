@@ -37,6 +37,9 @@ WORKDIR /app
 # Copy application files (public/build Vite assets are already precompiled)
 COPY . .
 
+# Backup default storage files so a newly mounted volume doesn't lose seed images
+RUN cp -r storage/app/public /app/storage_defaults
+
 # Install PHP dependencies without dev packages
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
