@@ -1,58 +1,149 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIPAS
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Sistem Informasi Peminjaman Alat Sekolah**: aplikasi web untuk mengelola peminjaman alat dan perlengkapan sekolah, mulai dari katalog, pengajuan, persetujuan penanggung jawab (PJ), serah terima, sampai pengembalian dan perhitungan denda.
 
-## About Laravel
+Dibangun dengan [Laravel](https://laravel.com), Tailwind CSS 4, dan Vite. Data contoh bawaan bernuansa SMKN 5 Solo (kategori Bengkel, Lab RPL, Multimedia, dan Olahraga).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Fitur
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Peminjam (siswa dan guru)**
+- Pendaftaran akun: siswa dengan NISN dan kelas, guru dengan NIP dan mata pelajaran/unit kerja
+- Katalog alat per kategori beserta stok, spesifikasi, lokasi, batas hari pinjam, dan denda per hari
+- Pengajuan peminjaman dengan nomor tiket dan unggah proposal
+- Riwayat peminjaman, pembatalan pengajuan, serta cetak bukti pinjam dan riwayat
+- Kotak pesan (inbox) untuk notifikasi dari PJ
+- Halaman profil PJ per kategori
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Admin (PJ per kategori)**
+- Verifikasi peminjaman: setujui, tolak, serah terima, dan selesaikan pengembalian
+- Kirim pesan ke peminjam terkait sebuah peminjaman
+- Manajemen alat dan unit fisik per alat (kode unit, status, kondisi)
+- Cetak bukti pinjam dan rekap peminjaman
+- Pusat pesan untuk mengirim pesan ke pengguna
 
-## Learning Laravel
+**Otomatis**
+- Perhitungan denda keterlambatan dan pengingat ke peminjam lewat perintah terjadwal `loans:process-overdue` (setiap hari pukul 07:00)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Alur status peminjaman: `menunggu` → `disetujui` → `dipinjam` → `selesai`, dengan cabang `ditolak` dan `dibatalkan`.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Teknologi
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+| Bagian | Teknologi |
+| --- | --- |
+| Backend | PHP 8.3+, Laravel 13 |
+| Frontend | Blade, Tailwind CSS 4, Vite |
+| Database | SQLite (default di `.env.example`), MySQL didukung di image Docker |
+| Antrean, cache, sesi | Database driver |
+| Testing | PHPUnit |
+| Code style | Laravel Pint |
 
-## Agentic Development
+## Prasyarat
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- PHP 8.3 atau lebih baru dengan ekstensi umum Laravel (`pdo`, `mbstring`, `gd`, `zip`, `intl`, dll.)
+- Composer 2
+- Node.js dan npm
+
+## Instalasi
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/karanglawud/SIPAS.git
+cd SIPAS
+composer run setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Perintah `composer run setup` menjalankan `composer install`, menyalin `.env.example` ke `.env`, membuat `APP_KEY`, menjalankan migrasi, lalu `npm install` dan `npm run build`.
 
-## Contributing
+Jika memakai SQLite dan file database belum ada, buat dulu sebelum migrasi:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+touch database/database.sqlite
+php artisan migrate
+```
 
-## Code of Conduct
+Isi data contoh (kategori, alat, unit, akun, dan beberapa peminjaman):
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan db:seed
+```
 
-## Security Vulnerabilities
+Agar gambar dan proposal yang diunggah bisa diakses:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan storage:link
+```
 
-## License
+## Menjalankan di Lokal
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+composer run dev
+```
+
+Aplikasi berjalan di `http://localhost:8000`. Alternatifnya, jalankan `php artisan serve` dan `npm run dev` di dua terminal.
+
+Untuk denda dan pengingat otomatis, jalankan scheduler Laravel:
+
+```bash
+php artisan schedule:work
+```
+
+Atau jalankan manual satu kali:
+
+```bash
+php artisan loans:process-overdue
+```
+
+## Akun Contoh
+
+Setelah `php artisan db:seed`, semua akun berikut memakai password `password`.
+
+| Peran | Email |
+| --- | --- |
+| Siswa | `abror@smkn5solo.sch.id` |
+| Guru | `danang@smkn5solo.sch.id` |
+| Admin (Bengkel) | `pj.bengkel@smkn5solo.sch.id` |
+| Admin (Lab RPL) | `pj.lab@smkn5solo.sch.id` |
+| Admin (Multimedia) | `pj.multimedia@smkn5solo.sch.id` |
+| Admin (Olahraga) | `pj.olahraga@smkn5solo.sch.id` |
+
+> Jangan jalankan seeder di produksi, atau ganti semua password bawaan terlebih dahulu.
+
+## Testing dan Code Style
+
+```bash
+composer test
+vendor/bin/pint
+```
+
+## Struktur Proyek
+
+```
+app/Console/Commands/   Perintah artisan (loans:process-overdue)
+app/Http/Controllers/   Controller peminjam dan admin
+app/Models/             User, Category, Tool, ToolUnit, Loan, Message
+database/migrations/    Skema database
+database/seeders/       Data contoh
+resources/views/        Tampilan Blade (auth, catalog, loans, admin, messages)
+routes/web.php          Definisi route
+routes/console.php      Jadwal perintah artisan
+tests/Feature/          Pengujian fitur
+```
+
+## Deployment
+
+Repositori menyertakan `Dockerfile` dan `start.sh` untuk deployment berbasis container (skrip dipersiapkan untuk Railway). Saat start, skrip menyiapkan folder storage, membangun cache produksi, menjalankan `php artisan migrate --force`, lalu menyalakan server di `PORT` (default 8080).
+
+Hal yang perlu diperhatikan di produksi:
+- Set `APP_ENV=production`, `APP_DEBUG=false`, dan `APP_KEY` melalui environment variable
+- Pasang volume persisten untuk `storage/` agar unggahan tidak hilang
+- Pastikan scheduler (`schedule:run` lewat cron, atau `schedule:work`) berjalan agar denda dan pengingat terproses
+
+## Kontribusi
+
+1. Fork repositori ini
+2. Buat branch: `git checkout -b fitur/nama-fitur`
+3. Pastikan `composer test` lolos dan jalankan `vendor/bin/pint`
+4. Commit dan push, lalu buka Pull Request
+
+## Lisensi
+
+Repositori ini belum memiliki file lisensi. Framework Laravel dilisensikan di bawah [MIT](https://opensource.org/licenses/MIT).
