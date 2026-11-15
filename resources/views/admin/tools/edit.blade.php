@@ -65,7 +65,7 @@
                     </div>
 
                     <div class="space-y-1">
-                        <label class="block font-bold text-slate-700">Spesifikasi Alat:</label>
+                        <label class="block font-bold text-slate-700">Deskripsi Alat:</label>
                         <textarea name="spec" rows="3" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-900 focus:outline-none">{{ old('spec', $tool->spec) }}</textarea>
                     </div>
 

@@ -75,7 +75,7 @@
 
                 <!-- Spec -->
                 <div class="space-y-1">
-                    <label class="block font-bold text-slate-700">Spesifikasi &amp; Kelengkapan Alat:</label>
+                    <label class="block font-bold text-slate-700">Deskripsi &amp; Kelengkapan Alat:</label>
                     <textarea name="spec" rows="3" placeholder="Contoh: Daya 670 Watt, Kecepatan tanpa beban 11000 rpm, include handle tambahan & kunci mata..." 
                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-blue-900 focus:outline-none">{{ old('spec') }}</textarea>
                     @error('spec')
