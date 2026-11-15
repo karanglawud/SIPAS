@@ -99,4 +99,41 @@ class AuthController extends Controller
 
         return redirect()->route('home')->with('success', 'Anda telah keluar dari sistem.');
     }
+
+    public function showForgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function resetPasswordWithIdentifier(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'identifier' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'identifier.required' => 'NISN atau NIP wajib diisi untuk verifikasi identitas.',
+            'password.required' => 'Kata sandi baru wajib diisi.',
+            'password.min' => 'Kata sandi baru minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi kata sandi baru tidak sesuai.',
+        ]);
+
+        $user = User::where('email', $validated['email'])
+            ->where('identifier', trim($validated['identifier']))
+            ->first();
+
+        if (! $user) {
+            return back()->withErrors([
+                'identifier' => 'Data verifikasi tidak cocok. Pastikan email dan NISN (siswa) atau NIP (guru) sesuai dengan yang terdaftar saat membuat akun.',
+            ])->onlyInput('email', 'identifier');
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return redirect()->route('login')->with('success', 'Kata sandi akun '.$user->name.' berhasil diperbarui! Silakan masuk menggunakan kata sandi baru Anda.');
+    }
 }

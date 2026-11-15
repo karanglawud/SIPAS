@@ -41,6 +41,9 @@
                         <input type="checkbox" name="remember" class="rounded text-blue-600 focus:ring-blue-600">
                         <span>Ingat saya</span>
                     </label>
+                    <a href="{{ route('password.forgot') }}" class="font-bold text-blue-600 hover:text-blue-800 hover:underline">
+                        Lupa kata sandi?
+                    </a>
                 </div>
 
                 <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all">

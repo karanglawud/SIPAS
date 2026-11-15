@@ -8,6 +8,7 @@ use App\Models\Tool;
 use App\Models\ToolUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class RegistrationAndLoanFeatureTest extends TestCase
@@ -335,5 +336,77 @@ class RegistrationAndLoanFeatureTest extends TestCase
 
         $loan3 = Loan::latest('id')->first();
         $this->assertNotEquals($loan2->ticket_number, $loan3->ticket_number);
+    }
+
+    public function test_forgot_password_page_can_be_rendered(): void
+    {
+        $response = $this->get(route('password.forgot'));
+        $response->assertStatus(200);
+        $response->assertSee('Reset Kata Sandi');
+        $response->assertSee('NISN Siswa / NIP Guru');
+    }
+
+    public function test_user_can_reset_password_with_correct_identifier(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'siswa.test@smkn5solo.sch.id',
+            'identifier' => '0098765432',
+            'password' => Hash::make('oldpassword'),
+        ]);
+
+        $response = $this->post(route('password.reset.identifier'), [
+            'email' => 'siswa.test@smkn5solo.sch.id',
+            'identifier' => '0098765432',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('success');
+
+        $user->refresh();
+        $this->assertTrue(Hash::check('newpassword123', $user->password));
+    }
+
+    public function test_user_cannot_reset_password_with_wrong_identifier(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'siswa.test@smkn5solo.sch.id',
+            'identifier' => '0098765432',
+            'password' => Hash::make('oldpassword'),
+        ]);
+
+        $response = $this->from(route('password.forgot'))->post(route('password.reset.identifier'), [
+            'email' => 'siswa.test@smkn5solo.sch.id',
+            'identifier' => '9999999999', // salah
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ]);
+
+        $response->assertRedirect(route('password.forgot'));
+        $response->assertSessionHasErrors('identifier');
+
+        $user->refresh();
+        $this->assertTrue(Hash::check('oldpassword', $user->password));
+    }
+
+    public function test_user_cannot_reset_password_with_mismatched_confirmation(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'siswa.test@smkn5solo.sch.id',
+            'identifier' => '0098765432',
+            'password' => Hash::make('oldpassword'),
+        ]);
+
+        $response = $this->from(route('password.forgot'))->post(route('password.reset.identifier'), [
+            'email' => 'siswa.test@smkn5solo.sch.id',
+            'identifier' => '0098765432',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'differentpassword',
+        ]);
+
+        $response->assertSessionHasErrors('password');
+        $user->refresh();
+        $this->assertTrue(Hash::check('oldpassword', $user->password));
     }
 }

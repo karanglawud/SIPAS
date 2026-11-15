@@ -21,6 +21,8 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/daftar', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/daftar', [AuthController::class, 'register'])->name('register.post');
+Route::get('/lupa-sandi', [AuthController::class, 'showForgotPassword'])->name('password.forgot');
+Route::post('/lupa-sandi', [AuthController::class, 'resetPasswordWithIdentifier'])->middleware('throttle:5,1')->name('password.reset.identifier');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Authenticated Borrower Routes
