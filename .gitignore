@@ -1,30 +1,63 @@
+# Logs & Debug
 *.log
-.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
+
+# Tooling & Tests
 .phpactor.json
+.php-cs-fixer.cache
 .phpunit.result.cache
+/.phpunit.cache
+_ide_helper.php
+
+# Editors & IDEs
 /.codex
 /.cursor/
+/.fleet
 /.idea
 /.nova
-/.phpunit.cache
 /.vscode
 /.zed
+*.sublime-project
+*.sublime-workspace
+
+# Secrets & Dependencies
 /auth.json
 /node_modules
+/vendor
+
+# Public & Build Assets
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+
+# Storage & Keys
 /storage/*.key
 /storage/pail
-/vendor
+
+# Database & SQLite
 /database/*.sqlite
-/database/sipas.sql
-/sipas.sql
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 *.sql
-_ide_helper.php
+*.sql.gz
+*.dump
+
+# Homestead
 Homestead.json
 Homestead.yaml
+
+# Operating System Files
+.DS_Store
+._*
 Thumbs.db
+ehthumbs.db
+Desktop.ini
